@@ -741,7 +741,7 @@
   }
   $('#compareBtn').onclick = () => { renderCompare(); cmpModal.hidden = false; };
   cmpModal.onclick = e => {
-    if (e.target === cmpModal || e.target.hasAttribute('data-close')) { cmpModal.hidden = true; return; }
+    if (e.target === cmpModal || e.target.closest('[data-close]')) { cmpModal.hidden = true; return; }
     const pick = e.target.closest('[data-pick]'), retry = e.target.closest('[data-retry]');
     if (pick) { const d = job.designs.find(x => x.tier === pick.dataset.pick); cmpModal.hidden = true; if (d) showDesign(d); }
     if (retry) { cmpModal.hidden = true; openFail(retry.dataset.retry); }
@@ -775,7 +775,7 @@
       }
     }, 1400);
   };
-  failModal.onclick = e => { if ((e.target === failModal || e.target.hasAttribute('data-close')) && !failRetry.disabled) failModal.hidden = true; };
+  failModal.onclick = e => { if ((e.target === failModal || e.target.closest('[data-close]')) && !failRetry.disabled) failModal.hidden = true; };
   document.addEventListener('click', () => { menu.hidden = true; });
   $('#bellBtn').onclick = () => { $('#bellDot').hidden = true; toast(state.deployed ? 'Deployment completed successfully' : 'No new notifications'); };
 
@@ -813,7 +813,7 @@
   // ---------- Shortcuts ----------
   const modal = $('#shortcutsModal');
   $('#shortcutsBtn').onclick = () => { modal.hidden = false; };
-  modal.onclick = e => { if (e.target === modal || e.target.hasAttribute('data-close')) modal.hidden = true; };
+  modal.onclick = e => { if (e.target === modal || e.target.closest('[data-close]')) modal.hidden = true; };
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea, select')) return;
     if (e.key === '+' || e.key === '=') zoomAt(1.2, ...center());
