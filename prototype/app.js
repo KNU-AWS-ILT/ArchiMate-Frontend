@@ -265,14 +265,57 @@
     state.tx = cx - (cx - state.tx) * k; state.ty = cy - (cy - state.ty) * k; state.scale = ns;
     applyView();
   }
-  function fit() {
-    const r = canvas.getBoundingClientRect();
-    const chatEl = $('#chat');
-    // 채팅 창이 넓어 캔버스가 좁아지면 상단 바의 배포 상태 칩을 숨긴다
+  // 채팅 창이 넓어 캔버스가 좁아지면 상단 바의 배포 상태 칩을 숨긴다
+  function updateTopbar() {
+    const r = canvas.getBoundingClientRect(), chatEl = $('#chat');
     const docked = !chatEl.hidden && !chatEl.classList.contains('floating');
     document.querySelector('.topbar').classList.toggle('compact', r.width - (docked ? chatEl.offsetWidth : 0) - 48 < 560);
+  }
+
+  // 화면에 보이는 캔버스 영역 (채팅 창과 상단 바에 가려지는 부분 제외)
+  function visibleBox() {
+    const r = canvas.getBoundingClientRect(), chatEl = $('#chat');
     const left = !chatEl.hidden && r.width > 760 ? chatEl.offsetLeft + chatEl.offsetWidth + 8 : 0;
-    const top = 76, w = r.width - left, h = r.height - top;
+    const top = 76;
+    return { left, top, w: r.width - left, h: r.height - top };
+  }
+
+  // 원 상태 복귀용 뷰 저장 / 부드러운 이동
+  let animT;
+  function animateTo(v) {
+    canvas.classList.add('view-anim');
+    state.tx = v.tx; state.ty = v.ty; state.scale = v.scale;
+    applyView();
+    clearTimeout(animT); animT = setTimeout(() => canvas.classList.remove('view-anim'), 520);
+  }
+  // 설정 단계에서 강조된 서비스로 확대 (처음 한 번만 현재 뷰를 저장)
+  function zoomToFocus() {
+    const ns = nodes.filter(n => state.focus.has(n.id));
+    if (!ns.length) return;
+    if (!state.homeView) state.homeView = { tx: state.tx, ty: state.ty, scale: state.scale };
+    const { left, top, w, h } = visibleBox(), pad = 56, m = 24;
+    const x1 = Math.min(...ns.map(n => n.x)) - pad, y1 = Math.min(...ns.map(n => n.y)) - pad;
+    const x2 = Math.max(...ns.map(n => n.x + NW)) + pad, y2 = Math.max(...ns.map(n => n.y + NH)) + pad;
+    const aw = w - m * 2, ah = h - m * 2;
+    const scale = Math.min(aw / (x2 - x1), ah / (y2 - y1), 2.2);
+    animateTo({
+      scale,
+      tx: left + m + (aw - (x2 - x1) * scale) / 2 - x1 * scale,
+      ty: top + m + (ah - (y2 - y1) * scale) / 2 - y1 * scale,
+    });
+  }
+  function restoreHome() {
+    if (!state.homeView) return;
+    const v = state.homeView; state.homeView = null;
+    animateTo(v);
+  }
+  // 강조 서비스가 있으면 확대, 없으면 원래 뷰로 복귀
+  const syncCamera = () => (state.focus.size ? zoomToFocus() : restoreHome());
+
+  function fit() {
+    state.homeView = null;
+    const r = canvas.getBoundingClientRect();
+    const { left, top, w, h } = visibleBox();
     const x1 = Math.min(...nodes.map(n => n.x)) - 30, y1 = Math.min(...nodes.map(n => n.y)) - 40;
     const x2 = Math.max(...nodes.map(n => n.x + NW)) + 30, y2 = Math.max(...nodes.map(n => n.y + NH)) + 30;
     state.scale = Math.min(w / (x2 - x1), h / (y2 - y1), 1.6);
@@ -289,6 +332,7 @@
   let drag = null;
   canvas.addEventListener('pointerdown', e => {
     if (e.target.closest('.topbar, .zoom, .chat, .chat-fab')) return;
+    canvas.classList.remove('view-anim');
     const nodeEl = e.target.closest('.node');
     if (nodeEl) {
       const n = byId[nodeEl.dataset.id];
@@ -322,6 +366,7 @@
   });
   canvas.addEventListener('wheel', e => {
     if (e.target.closest('.chat')) return;
+    canvas.classList.remove('view-anim');
     e.preventDefault();
     const r = canvas.getBoundingClientRect();
     zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
@@ -349,6 +394,7 @@
       renderGuide();
     }
     paintHighlight();
+    syncCamera();
   }
 
   // ---------- Guide panel ----------
@@ -364,7 +410,7 @@
   tabsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-tab]'); if (!b) return;
     state.tab = b.dataset.tab; state.openStep = null; state.focus = new Set(); state.selected = null;
-    renderGuide(); paintHighlight();
+    renderGuide(); paintHighlight(); syncCamera();
   });
 
   function renderGuide() {
@@ -416,9 +462,9 @@
     const step = allSteps.find(s => s.id === id); if (!step) return;
     state.tab = step.tab; state.openStep = id;
     if (!fromNode) { state.selected = null; state.focus = new Set(step.nodes); }
-    renderGuide(); paintHighlight();
+    renderGuide(); paintHighlight(); syncCamera();
   }
-  function closeStep() { state.openStep = null; state.focus = new Set(); renderGuide(); paintHighlight(); }
+  function closeStep() { state.openStep = null; state.focus = new Set(); renderGuide(); paintHighlight(); syncCamera(); }
 
   // ---------- AI chat (non-modal) ----------
   const chat = $('#chat'), log = $('#chatLog'), input = $('#chatText'), fab = $('#chatFab');
@@ -546,8 +592,8 @@
     viewing = id; log.scrollTop = log.scrollHeight;
   }
 
-  function showChat() { chat.hidden = false; fab.hidden = true; }
-  $('#chatClose').onclick = () => { closeHistory(); chat.hidden = true; fab.hidden = false; fit(); };
+  function showChat() { chat.hidden = false; fab.hidden = true; updateTopbar(); }
+  $('#chatClose').onclick = () => { closeHistory(); chat.hidden = true; fab.hidden = false; updateTopbar(); };
   fab.onclick = () => { showChat(); input.focus(); };
 
   // --- 폭 조절 (모서리 끌기, 더블클릭: 기본 폭) ---
@@ -590,11 +636,11 @@
         removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
         gripEl.classList.remove('active'); appEl.classList.remove('resizing'); document.body.classList.remove('resizing');
         try { localStorage.setItem(WIDTH[kind].key, String(w)); } catch {}
-        fit();
+        updateTopbar();
       };
       addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
     });
-    gripEl.addEventListener('dblclick', () => { resetWidth(kind); fit(); toast('기본 폭으로 되돌렸어요'); });
+    gripEl.addEventListener('dblclick', () => { resetWidth(kind); updateTopbar(); toast('기본 폭으로 되돌렸어요'); });
   }
   bindGrip($('#chatGrip'), 'chat', +1);    // 채팅 창: 오른쪽 모서리를 오른쪽으로 끌면 넓어짐
   bindGrip($('#guideGrip'), 'guide', -1);  // 설정 가이드: 왼쪽 모서리를 왼쪽으로 끌면 넓어짐
@@ -605,7 +651,7 @@
   guideClose.onclick = () => {
     const closed = appEl.classList.toggle('guide-closed');
     guideClose.title = guideClose.ariaLabel = closed ? '설정 가이드 열기' : '설정 가이드 닫기';
-    setTimeout(fit, 280);
+    setTimeout(updateTopbar, 280);
   };
 
   // drag chat window by its header (stays non-modal; canvas remains usable)
@@ -613,7 +659,7 @@
     if (e.target.closest('button')) return;
     const cr = canvas.getBoundingClientRect(), r = chat.getBoundingClientRect();
     const ox = e.clientX - r.left, oy = e.clientY - r.top;
-    chat.classList.add('floating');
+    chat.classList.add('floating'); updateTopbar();
     const move = ev => {
       const x = Math.max(0, Math.min(ev.clientX - cr.left - ox, cr.width - r.width));
       const y = Math.max(0, Math.min(ev.clientY - cr.top - oy, cr.height - 120));
@@ -679,7 +725,7 @@
 
   // ---------- Shortcuts ----------
   const modal = $('#shortcutsModal');
-  $('#shortcutsBtn').onclick = $('#helpBtn').onclick = () => { modal.hidden = false; };
+  $('#shortcutsBtn').onclick = () => { modal.hidden = false; };
   modal.onclick = e => { if (e.target === modal || e.target.hasAttribute('data-close')) modal.hidden = true; };
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea, select')) return;
@@ -706,6 +752,6 @@
   }
 
   // ---------- Init ----------
-  renderNodes(); renderGuide(); greet(); fit();
-  addEventListener('resize', () => { restoreWidths(); fit(); });
+  renderNodes(); renderGuide(); greet(); fit(); updateTopbar();
+  addEventListener('resize', () => { restoreWidths(); updateTopbar(); });
 })();
