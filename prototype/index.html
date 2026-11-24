@@ -13,6 +13,8 @@
       <div class="world" id="world">
         <svg class="edges" id="edges" width="2400" height="1400"></svg>
         <div class="nodes" id="nodes"></div>
+        <!-- 새 캔버스: 블록 모서리에서 끌어 연결할 때 나타나는 화살표 -->
+        <div class="link-handle" id="linkHandle" hidden><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       </div>
 
       <!-- floating top bar -->
@@ -35,6 +37,17 @@
           <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <i class="dot" id="bellDot" hidden></i>
         </button>
+      </div>
+
+      <!-- 새 캔버스(직접 구성) 도구 -->
+      <div class="custom-tools" id="customTools" hidden>
+        <button class="pill pill-btn" id="addSvcBtn">＋ 서비스 추가</button>
+        <div class="svc-palette" id="svcPalette" hidden></div>
+      </div>
+      <div class="canvas-hint" id="canvasHint" hidden>
+        <b>새 캔버스</b>
+        <span>위쪽의 "서비스 추가"를 눌러 시작하세요.</span>
+        <span>서비스를 끌어서 옮기고, 블록 모서리에서 다른 블록으로 끌면 선이 이어져요.</span>
       </div>
 
       <!-- ===== AI chat (non-modal, floating) ===== -->
@@ -166,6 +179,18 @@
       <div class="modal-actions">
         <button class="btn" data-close>닫기</button>
         <button class="btn btn-primary" id="failRetry">다시 시도</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 새 캔버스 만들기 확인 -->
+  <div class="modal" id="resetModal" hidden>
+    <div class="modal-card confirm" role="alertdialog" aria-labelledby="resetTitle">
+      <h3 id="resetTitle">지금 구성을 지우고 새로 시작할까요?</h3>
+      <p>직접 구성한 서비스와 연결이 모두 지워지고, 되돌릴 수 없어요.</p>
+      <div class="modal-actions">
+        <button class="btn" id="resetCancel">취소</button>
+        <button class="btn btn-danger" id="resetOk">지우고 시작</button>
       </div>
     </div>
   </div>
