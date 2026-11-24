@@ -4,6 +4,8 @@
   --fs-body: 16px;
   --fs-sub: 14px;
   --fs-cap: 12.5px;
+  --guide-w: clamp(400px, 28vw, 480px);
+  --chat-w: clamp(360px, 24vw, 430px);
 }
 :root {
   /* AWS brand: Orange #FF9900, Squid Ink #232F3E */
@@ -75,7 +77,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .app {
   display: grid;
   transition: grid-template-columns .25s ease;
-  grid-template-columns: 1fr clamp(400px, 28vw, 480px);
+  grid-template-columns: 1fr var(--guide-w);
   grid-template-rows: 1fr 48px;
   height: 100vh;
 }
@@ -177,7 +179,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .select {
   display: flex; align-items: center; justify-content: space-between; gap: 22px;
-  min-width: 240px;
+  flex: 1 1 240px; min-width: 110px;
   padding: 9px 13px 9px 30px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
   font-size: var(--fs-body);
@@ -351,7 +353,7 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 
 /* ===== AI chat (floating, non-modal) ===== */
 .chat {
-  position: absolute; left: 16px; top: 16px; bottom: 16px; width: clamp(360px, 24vw, 430px);
+  position: absolute; left: 16px; top: 16px; bottom: 16px; width: var(--chat-w);
   display: flex; flex-direction: column;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter: blur(10px);
@@ -361,7 +363,12 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 }
 .chat.floating { bottom: auto; height: 620px; }
 /* keep top bar clear of the docked chat */
-.canvas:has(.chat:not([hidden]):not(.floating)) .topbar { left: calc(50% + clamp(180px, 12vw, 215px) + 8px); }
+.canvas:has(.chat:not([hidden]):not(.floating)) .topbar { left: calc(50% + var(--chat-w) / 2 + 8px); max-width: calc(100% - var(--chat-w) - 48px); }
+.topbar > * { min-width: 0; }
+.select #stackName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#deployStatus { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+#modeToggle, .icon-btn { flex: none; }
+.topbar.compact #deployStatus { display: none; }
 .chat[hidden] { display: none; }
 .chat-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -461,6 +468,7 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 .step-actions .btn { padding: 6px 12px; font-size: var(--fs-sub); }
 
 @media (max-width: 760px) {
+  .resize-grip { display: none; }
   .app { grid-template-columns: 1fr; grid-template-rows: 1fr 340px 40px; }
   .panel { grid-row: 2; grid-column: 1; border-left: 0; border-top: 1px solid var(--border); }
   .topbar { gap: 6px; padding: 6px 8px; max-width: calc(100% - 32px); }
@@ -512,3 +520,16 @@ kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
 .btn-danger:hover { background: var(--danger-hover); border-color: var(--danger-hover); }
+
+/* ===== 폭 조절 (채팅 창 오른쪽, 설정 가이드 왼쪽 모서리) ===== */
+.resize-grip { position: absolute; top: 0; bottom: 0; width: 10px; z-index: 6; cursor: ew-resize; touch-action: none; }
+.resize-grip::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
+  background: var(--accent); opacity: 0; transition: opacity .15s;
+}
+.resize-grip:hover::after, .resize-grip.active::after { opacity: .85; }
+.chat .resize-grip { right: -5px; }
+.panel .resize-grip { left: -5px; }
+.app.resizing { transition: none; }
+body.resizing { cursor: ew-resize; user-select: none; }
+body.resizing * { cursor: ew-resize !important; }

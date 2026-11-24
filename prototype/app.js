@@ -268,6 +268,9 @@
   function fit() {
     const r = canvas.getBoundingClientRect();
     const chatEl = $('#chat');
+    // 채팅 창이 넓어 캔버스가 좁아지면 상단 바의 배포 상태 칩을 숨긴다
+    const docked = !chatEl.hidden && !chatEl.classList.contains('floating');
+    document.querySelector('.topbar').classList.toggle('compact', r.width - (docked ? chatEl.offsetWidth : 0) - 48 < 560);
     const left = !chatEl.hidden && r.width > 760 ? chatEl.offsetLeft + chatEl.offsetWidth + 8 : 0;
     const top = 76, w = r.width - left, h = r.height - top;
     const x1 = Math.min(...nodes.map(n => n.x)) - 30, y1 = Math.min(...nodes.map(n => n.y)) - 40;
@@ -547,8 +550,58 @@
   $('#chatClose').onclick = () => { closeHistory(); chat.hidden = true; fab.hidden = false; fit(); };
   fab.onclick = () => { showChat(); input.focus(); };
 
+  // --- 폭 조절 (모서리 끌기, 더블클릭: 기본 폭) ---
+  const rootEl = document.documentElement;
+  const appEl = document.querySelector('.app');
+  const WIDTH = { chat: { min: 340, max: 0.40, key: 'archimate-chat-w', css: '--chat-w' },
+                  guide: { min: 380, max: 0.45, key: 'archimate-guide-w', css: '--guide-w' } };
+  const narrow = () => matchMedia('(max-width: 760px)').matches;
+  const guideWidth = () => appEl.classList.contains('guide-closed') ? 0 : document.querySelector('.panel').offsetWidth;
+  const chatWidth = () => chat.hidden ? 0 : chat.offsetWidth;
+  function limits(kind) {
+    const W = innerWidth, c = WIDTH[kind];
+    const other = kind === 'chat' ? guideWidth() : chatWidth();
+    return [c.min, Math.max(c.min, Math.min(W * c.max, W * 0.70 - other))];
+  }
+  const clampW = (kind, w) => { const [lo, hi] = limits(kind); return Math.round(Math.min(hi, Math.max(lo, w))); };
+  function setWidth(kind, w) { rootEl.style.setProperty(WIDTH[kind].css, w + 'px'); }
+  function resetWidth(kind) {
+    rootEl.style.removeProperty(WIDTH[kind].css);
+    try { localStorage.removeItem(WIDTH[kind].key); } catch {}
+  }
+  function restoreWidths() {
+    if (narrow()) return;
+    ['chat', 'guide'].forEach(kind => {
+      let v = null;
+      try { v = parseFloat(localStorage.getItem(WIDTH[kind].key)); } catch {}
+      if (Number.isFinite(v)) setWidth(kind, clampW(kind, v));
+    });
+  }
+  function bindGrip(gripEl, kind, dir) {
+    const getStart = () => kind === 'chat' ? chat.offsetWidth : document.querySelector('.panel').offsetWidth;
+    gripEl.addEventListener('pointerdown', e => {
+      if (narrow() || e.button > 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const sx = e.clientX, sw = getStart();
+      let w = sw;
+      gripEl.classList.add('active'); appEl.classList.add('resizing'); document.body.classList.add('resizing');
+      const move = ev => { w = clampW(kind, sw + dir * (ev.clientX - sx)); setWidth(kind, w); };
+      const up = () => {
+        removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+        gripEl.classList.remove('active'); appEl.classList.remove('resizing'); document.body.classList.remove('resizing');
+        try { localStorage.setItem(WIDTH[kind].key, String(w)); } catch {}
+        fit();
+      };
+      addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+    });
+    gripEl.addEventListener('dblclick', () => { resetWidth(kind); fit(); toast('기본 폭으로 되돌렸어요'); });
+  }
+  bindGrip($('#chatGrip'), 'chat', +1);    // 채팅 창: 오른쪽 모서리를 오른쪽으로 끌면 넓어짐
+  bindGrip($('#guideGrip'), 'guide', -1);  // 설정 가이드: 왼쪽 모서리를 왼쪽으로 끌면 넓어짐
+  restoreWidths();
+
   // --- 설정 가이드 패널 닫기/열기 ---
-  const appEl = document.querySelector('.app'), guideClose = $('#guideClose');
+  const guideClose = $('#guideClose');
   guideClose.onclick = () => {
     const closed = appEl.classList.toggle('guide-closed');
     guideClose.title = guideClose.ariaLabel = closed ? '설정 가이드 열기' : '설정 가이드 닫기';
@@ -654,5 +707,5 @@
 
   // ---------- Init ----------
   renderNodes(); renderGuide(); greet(); fit();
-  addEventListener('resize', fit);
+  addEventListener('resize', () => { restoreWidths(); fit(); });
 })();
