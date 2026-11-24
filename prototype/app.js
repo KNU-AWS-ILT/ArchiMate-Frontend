@@ -169,7 +169,7 @@
   const $ = s => document.querySelector(s);
   const canvas = $('#canvas'), world = $('#world'), nodesEl = $('#nodes'), edgesEl = $('#edges');
   const panelBody = $('#panelBody'), tabsEl = $('#tabs');
-  const edgeDelEl = $('#edgeDel'), linkHandle = $('#linkHandle');
+  const linkHandle = $('#linkHandle');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const svg = icon => `<svg viewBox="0 0 24 24">${ICON[icon]}</svg>`;
 
@@ -226,9 +226,10 @@
         + (label ? edgeLabel(byId[a], byId[b], label, on) : '')
         + (isCustom ? `<path class="edge-hit" data-i="${i}" d="${d}"/>` : '');
     }).join('');
-    placeEdgeDel();
+    // 선택한 연결선이 사라졌으면 선택을 푼다
+    if (se && !edges.some(e => e[0] === se.a && e[1] === se.b)) state.selEdge = null;
   }
-  // 선 가운데 지점 (연결 설명과 연결 삭제 버튼 위치)
+  // 선 가운데 지점 (연결 설명 위치)
   function edgeMid(a, b) {
     const ac = { x: a.x + NW / 2, y: a.y + NH / 2 }, bc = { x: b.x + NW / 2, y: b.y + NH / 2 };
     const dx = bc.x - ac.x, dy = bc.y - ac.y;
@@ -241,13 +242,6 @@
   function edgeLabel(a, b, text, on) {
     const { x, y } = edgeMid(a, b);
     return `<text class="edge-label${on ? ' hl' : ''}" x="${x}" y="${y}" text-anchor="middle">${esc(text)}</text>`;
-  }
-  // 선택한 연결선 가운데에 빨간 삭제 버튼을 놓는다
-  function placeEdgeDel() {
-    const se = state.selEdge, a = se && byId[se.a], b = se && byId[se.b];
-    if (!isCustom || !a || !b || !edges.some(e => e[0] === se.a && e[1] === se.b)) { edgeDelEl.hidden = true; if (se) state.selEdge = null; return; }
-    const m = edgeMid(a, b);
-    edgeDelEl.style.left = m.x + 'px'; edgeDelEl.style.top = m.y + 'px'; edgeDelEl.hidden = false;
   }
 
   function paintHighlight() {
@@ -339,7 +333,7 @@
   // ---------- Pointer: pan / drag / select ----------
   let drag = null;
   canvas.addEventListener('pointerdown', e => {
-    if (e.target.closest('.topbar, .custom-tools, .zoom, .chat, .chat-fab, .node-del, .edge-del')) return;
+    if (e.target.closest('.topbar, .custom-tools, .zoom, .chat, .chat-fab, .node-del')) return;
     canvas.classList.remove('view-anim');
     updateHover(e);
     if (hoverLink && canLink()) { startLink(e); return; }   // 블록 모서리에서 끌기 시작
@@ -865,7 +859,7 @@
     if (viewing === 'live') addMsg('ai', nodes.length ? `<b>내 캔버스</b>로 바꿨어요. 서비스 ${nodes.length}개, 연결 ${edges.length}개예요.` : '새 캔버스를 만들었어요. 위쪽의 "서비스 추가"로 시작해 보세요.');
   }
   function leaveCustom() {
-    isCustom = false; tools.hidden = true; palette.hidden = true; hint.hidden = true; hoverLink = null; linkHandle.hidden = true; edgeDelEl.hidden = true; state.selEdge = null; canvas.classList.remove('linkhover', 'linking'); setEdit(false, true);
+    isCustom = false; tools.hidden = true; palette.hidden = true; hint.hidden = true; hoverLink = null; linkHandle.hidden = true; state.selEdge = null; canvas.classList.remove('linkhover', 'linking'); setEdit(false, true);
   }
 
   // --- 서비스 추가: 화면에 보이는 영역의 가운데에 놓는다 ---
@@ -919,7 +913,7 @@
     return { node: n, side: side.side, x: side.x, y: side.y };
   }
   function updateHover(e) {
-    const ok = canLink() && !drag && !e.target.closest('.topbar, .custom-tools, .chat, .zoom, .chat-fab, .node-del, .edge-del');
+    const ok = canLink() && !drag && !e.target.closest('.topbar, .custom-tools, .chat, .zoom, .chat-fab, .node-del');
     hoverLink = ok ? findEdgeSpot(toWorld(e)) : null;
     canvas.classList.toggle('linkhover', !!hoverLink);
     if (!hoverLink) { linkHandle.hidden = true; return; }
@@ -952,14 +946,14 @@
     renderEdges(); syncCustom(); toast('연결했어요');
   }
 
-  // --- 연결선 선택: 선을 누르면 가운데에 빨간 삭제 버튼이 나온다 ---
+  // --- 연결선 선택: 선을 누르면 강조되고, Delete 또는 Backspace 키로 지운다 ---
   function selectEdge(i) {
     const ed = edges[i]; if (!ed) return;
     state.selEdge = { a: ed[0], b: ed[1] }; state.selected = null; state.focus = new Set();
     paintHighlight();
   }
 
-  // --- 삭제: 선택한 블록(우측 상단 빨간 버튼) 또는 연결선(가운데 빨간 버튼), Delete 키 ---
+  // --- 삭제: 선택한 블록(우측 상단 빨간 버튼 또는 Delete·Backspace 키), 선택한 연결선(Delete·Backspace 키) ---
   function deleteSelection() {
     if (state.selEdge) {
       const { a, b } = state.selEdge;
@@ -977,7 +971,6 @@
     const b = e.target.closest('.node-del'); if (!b) return;
     e.stopPropagation(); state.selected = b.closest('.node').dataset.id; deleteSelection();
   });
-  edgeDelEl.onclick = e => { e.stopPropagation(); deleteSelection(); };
 
   // --- 새 캔버스 만들기 확인 ---
   const resetModal = $('#resetModal');
