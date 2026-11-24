@@ -2,6 +2,7 @@
  * - completed      : design_job_completed.json (3안 모두 성공)
  * - partialFailed  : design_job_partial_failed.json (일부 안 실패, status: completed)
  * - failed         : design_job_failed.json (전부 실패, status: failed)
+ * - interview      : interview_questions.json (요구사항 인터뷰 질문 8개)
  * 계약이 바뀌면(`[contract]` PR) 이 파일을 다시 복사한다. 모양을 임의로 바꾸지 않는다.
  * 프로토타입은 file://로도 열리므로 fetch 대신 전역 변수로 둔다.
  */
@@ -2102,5 +2103,220 @@ failed: {
   "retryable": true,
   "requestId": "job_demo"
  }
+},
+interview: {
+ "questions": [
+  {
+   "id": "serviceType",
+   "text": "어떤 서비스인가요?",
+   "help": null,
+   "inputType": "single",
+   "options": [
+    {
+     "value": "web_app",
+     "label": "웹 서비스",
+     "description": "화면과 API가 있는 일반 웹 서비스"
+    },
+    {
+     "value": "api_only",
+     "label": "앱/서비스용 API",
+     "description": "모바일 앱 등에서 쓰는 API 서버"
+    },
+    {
+     "value": "static_site",
+     "label": "정적 사이트",
+     "description": "소개 페이지, 랜딩 페이지, 포트폴리오"
+    },
+    {
+     "value": "ai_chatbot",
+     "label": "AI 서비스",
+     "description": "LLM API를 호출하는 챗봇·생성형 서비스"
+    },
+    {
+     "value": "data_batch",
+     "label": "데이터 수집·처리",
+     "description": "정해진 시간마다 데이터를 모으고 가공"
+    },
+    {
+     "value": "other",
+     "label": "기타",
+     "description": "아래 자유 서술에 적어 주세요"
+    }
+   ],
+   "required": true,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "concurrentUsers",
+   "text": "동시에 몇 명 정도 접속할까요?",
+   "help": "가장 붐비는 순간을 기준으로 골라 주세요.",
+   "inputType": "single",
+   "options": [
+    {
+     "value": "under_100",
+     "label": "100명 이하",
+     "description": null
+    },
+    {
+     "value": "under_1k",
+     "label": "101~1,000명",
+     "description": null
+    },
+    {
+     "value": "under_10k",
+     "label": "1,001~1만 명",
+     "description": null
+    },
+    {
+     "value": "over_10k",
+     "label": "1만 명 초과",
+     "description": null
+    }
+   ],
+   "required": true,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "monthlyBudget",
+   "text": "한 달 인프라 예산은 얼마인가요?",
+   "help": "0원이면 AWS Free Tier 안에서만 설계합니다.",
+   "inputType": "number",
+   "options": [],
+   "required": true,
+   "unit": "KRW",
+   "placeholder": "50000"
+  },
+  {
+   "id": "awsExperience",
+   "text": "AWS를 얼마나 다뤄 봤나요?",
+   "help": null,
+   "inputType": "single",
+   "options": [
+    {
+     "value": "none",
+     "label": "처음이에요",
+     "description": "AWS 콘솔에 들어가 본 적이 없음"
+    },
+    {
+     "value": "beginner",
+     "label": "조금 써 봤어요",
+     "description": "튜토리얼로 몇 개 만들어 봄"
+    },
+    {
+     "value": "intermediate",
+     "label": "배포해 봤어요",
+     "description": "직접 서비스를 올리고 운영해 봄"
+    },
+    {
+     "value": "advanced",
+     "label": "익숙해요",
+     "description": "인프라를 담당해 본 경험이 있음"
+    }
+   ],
+   "required": true,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "dataStorage",
+   "text": "어떤 데이터를 저장하나요?",
+   "help": "해당하는 것을 모두 골라 주세요.",
+   "inputType": "multi",
+   "options": [
+    {
+     "value": "relational",
+     "label": "회원·주문처럼 서로 연결된 데이터",
+     "description": "표 여러 개를 엮어서 조회"
+    },
+    {
+     "value": "key_value",
+     "label": "단순한 목록·기록 데이터",
+     "description": "ID로 바로 찾는 데이터"
+    },
+    {
+     "value": "file_storage",
+     "label": "이미지·파일 업로드",
+     "description": null
+    },
+    {
+     "value": "none",
+     "label": "저장할 데이터 없음",
+     "description": null
+    }
+   ],
+   "required": true,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "trafficPattern",
+   "text": "접속은 언제 몰리나요?",
+   "help": null,
+   "inputType": "single",
+   "options": [
+    {
+     "value": "steady",
+     "label": "하루 종일 고르게",
+     "description": null
+    },
+    {
+     "value": "business_hours",
+     "label": "주로 낮 시간",
+     "description": null
+    },
+    {
+     "value": "spiky",
+     "label": "특정 기간에 몰림",
+     "description": "이벤트·모집 기간 등"
+    },
+    {
+     "value": "unknown",
+     "label": "잘 모르겠어요",
+     "description": null
+    }
+   ],
+   "required": false,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "availability",
+   "text": "서비스가 잠깐 멈추면 얼마나 곤란한가요?",
+   "help": null,
+   "inputType": "single",
+   "options": [
+    {
+     "value": "best_effort",
+     "label": "잠깐은 괜찮아요",
+     "description": "개인·동아리 프로젝트"
+    },
+    {
+     "value": "standard",
+     "label": "되도록 안 멈췄으면",
+     "description": "사용자가 있는 서비스"
+    },
+    {
+     "value": "high",
+     "label": "멈추면 안 돼요",
+     "description": "결제·예약 등 중요한 서비스"
+    }
+   ],
+   "required": false,
+   "unit": null,
+   "placeholder": null
+  },
+  {
+   "id": "freeText",
+   "text": "서비스를 자유롭게 설명해 주세요",
+   "help": "주요 기능, 사용하는 언어·프레임워크, 걱정되는 점 등",
+   "inputType": "text",
+   "options": [],
+   "required": false,
+   "unit": null,
+   "placeholder": "예: Next.js로 만든 동아리 모집 사이트예요. 지원서 PDF 업로드가 있어요."
+  }
+ ]
 }
 };

@@ -72,6 +72,7 @@
 - 로컬 실행: `pip install -e ".[dev]"` 후 `LLM_PROVIDER=mock uvicorn archimate.api.app:app --reload --app-dir src`, Swagger는 `http://localhost:8000/docs`다. 개발 서버는 Railway에 11.24.(화)까지 올리는 것이 목표다.
 - 프로토타입은 `file://`로도 열려서 `fetch` 대신 `prototype/mock-data.js`(전역 `window.MOCK`)에 계약 예시를 그대로 복사해 둔다. `completed`(3안 성공), `partialFailed`(`design_job_partial_failed.json`), `failed`(`design_job_failed.json`) 3개다. 모양은 계약과 같게 유지하고 계약이 바뀌면 다시 복사한다.
 - 실패 화면은 주소에 `?state=partial-failed`(일부 안 실패) 또는 `?state=failed`(전부 실패)를 붙여 확인한다. 기본은 3안 모두 성공이다. 다시 시도는 잠깐 기다린 뒤 성공으로 바뀐다. (실제는 `POST /designs`로 새로 생성한다.)
+- 화면 흐름은 로그인 → 요구사항 인터뷰(채팅) → 3안 만드는 중 → 구성도다. 프로토타입 검토용으로 주소에 `?screen=login|interview|generating|app`을 붙이면 그 화면에서 시작한다. 모의 로그인은 `sessionStorage`의 `archimate-auth`에 저장한다. 인터뷰 질문 8개는 `MOCK.interview`(계약 예시 `interview_questions.json` 복사본)이고, 답변은 `POST /api/v1/designs`의 `answers`가 될 값이다.
 - 3안 선택은 상단 바 드롭다운이고, 탭은 `designs[]`와 `failures[]`에 있는 tier로만 만든다. 안별 월 비용과 난이도는 메뉴와 가이드 패널 위쪽에 표시하고, 상단 바의 "3안 비교" 모달에서 장단점·성장 로드맵과 함께 나란히 비교한다.
 
 ## 5. 스키마 확정 후 반영 사항
