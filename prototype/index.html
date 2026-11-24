@@ -60,6 +60,7 @@
           <textarea id="chatText" rows="1" placeholder="아키텍처에 대해 물어보세요…"></textarea>
           <button class="send" title="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </form>
+        <div class="resize-grip" id="chatGrip" title="끌어서 폭 조절 · 더블클릭: 기본 폭"></div>
         <button class="edge-handle" id="chatClose" title="AI 대화 닫기" aria-label="AI 대화 닫기"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       </section>
       <button class="chat-fab" id="chatFab" hidden>
@@ -87,6 +88,7 @@
 
     <!-- ===== Right panel: setup guide ===== -->
     <aside class="panel" id="guidePanel">
+      <div class="resize-grip" id="guideGrip" title="끌어서 폭 조절 · 더블클릭: 기본 폭"></div>
       <button class="edge-handle" id="guideClose" title="설정 가이드 닫기" aria-label="설정 가이드 닫기"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <div class="panel-head">
         <div class="guide-top">
