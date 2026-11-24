@@ -1,75 +1,141 @@
 # 프론트엔드 필요 데이터 기록 (API 호출 대비)
-
 작성 기준: `ArchiMate-Frontend/prototype/app.js`의 목 데이터 (2026-11-19)
-용도: 프로토타입이 목 데이터로 처리하는 값을 정리해, API 명세와 아키텍처 JSON 스키마 논의의 입력으로 쓴다.
+최근 갱신: 2026-11-23 (폴링 확정, 비용 형식 수락, Cognito 로그인 방식 결정 반영)
+용도: 프로토타입이 목 데이터로 처리하는 값을 정리해, API 연동과 타입 정의의 기준으로 쓴다.
 
 ## 이 문서의 상태
-
-- 필드명은 **임시 표기(camelCase)** 이며 확정이 아니다. 표기법은 팀이 정한다. (`coding-conventions.md` 13번 항목)
-- 엔드포인트 경로와 응답 형식은 제안이 아니라 "프론트엔드가 필요로 하는 데이터" 목록이다.
-- 프로토타입에 화면이 추가되거나 바뀌면 이 문서를 같이 갱신한다. 갱신 날짜를 위 "작성 기준"에 적는다.
-- 백엔드가 JSON 스키마를 확정하면, 이 문서의 차이점을 "8. 스키마 확정 후 반영 사항"에 기록하고 Next.js 쪽 타입을 맞춘다.
+- 백엔드 답변으로 API 명세 대부분이 정해졌다. 모양의 원본은 `ArchiMate-Backend/contracts/`(스키마, 예시)이고, 백엔드 PR #17이 머지되면 `contracts/openapi.json`이 추가된다.
+- A~D 파일(`A-interview-questions.md` 등)을 정해진 내용으로 갱신했다. 이 문서의 5번(차이 기록)과 A~D가 어긋나면 백엔드 `contracts/`를 먼저 확인한다.
+- 백엔드 Issue 원본에는 "두 백엔드 파트 합의 전"이라는 표시가 남아 있다. 답변은 백엔드(AI 생성)와 백엔드(API·비용)가 각각 낸 것이다.
+- 프로토타입에 화면이 추가되거나 바뀌면 이 문서를 같이 갱신한다. 갱신 날짜를 위 "최근 갱신"에 적는다.
 
 ## 1. 프로토타입 목 데이터와 API 대응표
-
-| 프로토타입 변수 | 내용 | 실제 출처(예상) | 비고 |
+| 프로토타입 변수 | 내용 | 실제 출처 | 비고 |
 | --- | --- | --- | --- |
-| `TYPES` | 서비스 종류별 이름, 분류, 역할 설명, 월 비용(`cost`), Terraform 리소스명(`tf`) | 서비스 카탈로그 + 설계 응답 | `cost`는 목 값. 실제는 가격 JSON 스냅샷 기반 계산값만 쓴다. `tf`는 CDK 출력이 범위 제외라서 사용하지 않는다. |
+| `TYPES` | 서비스 종류별 이름, 분류, 역할 설명, 월 비용(`cost`), Terraform 리소스명(`tf`) | 서비스 종류는 `serviceType`(21종), 설명은 설계 응답의 `nodes[].role`·`reason`과 D | `cost`는 목 값. 실제는 `monthlyCost`를 표시만 한다. `tf`는 CDK 출력이 범위 제외라서 사용하지 않는다. |
 | `CAT`, `ICON` | 분류 색상, 아이콘 | 프론트엔드 자체 자산 | API에서 받지 않는다. `serviceType`으로 매핑한다. |
-| `raw` / `nodes` | 노드 id, 서비스 종류, 좌표(x, y) | 설계 응답의 `architecture.nodes` | 좌표를 서버가 줄지 프론트가 계산할지 미정 (아래 질문 1) |
-| `edges` | 노드 간 연결 `[from, to]` | 설계 응답의 `architecture.edges` | |
-| `groups` | 노드 묶음 (예: Security & Observability) | 설계 응답의 `architecture.groups` | VPC·서브넷 표현에도 필요 |
-| `GUIDE` | 단계별 절차(제목, 설명, 할 일, CLI 명령, 경고, 연결 노드) | 운영 절차 응답 | 한국어 문구는 백엔드(AI 생성) 담당 |
-| `state.done` | 완료 체크한 절차 id | 브라우저 `localStorage` | MVP는 서버 저장 없음. DB 사용 여부는 미정 |
-| 스택 목록, 채팅 응답, Deploy | 프로토타입 전용 | 없음 | 범위 제외. 아래 6번 참고 |
+| `raw` / `nodes` | 노드 id, 서비스 종류 | 설계 응답의 `architecture.nodes` | **좌표는 서버가 주지 않는다.** 프론트가 그룹 구조로 자동 배치한다. (확정) |
+| `edges` | 노드 간 연결 | `architecture.edges` (`from`, `to`, `label`) | |
+| `groups` | 노드 묶음 | `architecture.groups` (`id`, `kind`, `label`, `parentId`) | VPC·서브넷은 노드가 아니라 `kind`로 표현 |
+| `GUIDE` | 단계별 절차(제목, 설명, 할 일, 콘솔 경로, 경고, 연결 노드) | 운영 절차 (B의 `operationsGuide` 또는 C) | `cli`는 없고 `consolePath`가 있다. |
+| `state.done` | 완료 체크한 절차 id | 브라우저 `localStorage` | 키는 `guide:{designId}:{stepId}` (확정) |
+| 스택 목록, 채팅 응답, Deploy | 프로토타입 전용 | 없음 | 범위 제외. 아래 3번 참고 |
 
 ## 2. 필요한 API 목록 (프론트엔드 관점)
+| # | 용도 | 엔드포인트 | 결정 내용 |
+| --- | --- | --- | --- |
+| A | 인터뷰 질문 | 없음 | **API 없이 프론트 상수.** 질문 7개 + 자유 서술. 원본은 `contracts/examples/interview_questions.json`. 질문 문구는 PM 검토 완료 (백엔드 #8) |
+| B | 설계 3안 생성 | `POST /api/v1/designs` | 요청 `{ answers }`, 응답 `202 { jobId }` |
+| B' | 생성 상태·결과 조회 | `GET /api/v1/designs/jobs/{jobId}` | 폴링 3초, 최대 약 3분. 항상 200이고 결과는 `status`로 구분. 끝난 안부터 `designs[]`에 채워진다. |
+| C | 운영 절차 조회 | `GET /api/v1/designs/{designId}/guide` | 3안 생성 시 함께 생성·저장된 값을 조회만 한다. B의 `operationsGuide`와 같은 값이다. |
+| D | 서비스 설명 조회 | `GET /api/v1/designs/{designId}/nodes/{nodeId}/explanation` | 클릭할 때 생성하고 30일 캐시. 사용자 노드는 호출하지 않는다. |
 
-| # | 용도 | 요청에 담길 값 | 응답에 담길 값 | 프로토타입 상태 |
-| --- | --- | --- | --- | --- |
-| A | 인터뷰 질문 조회 | 없음 | 질문 5~7개 (id, 문구, 입력 형태, 선택지) | 화면 없음. 질문 목록 자체가 정적이면 프론트에 두어도 됨 (질문 2) |
-| B | 설계 3안 생성 | 인터뷰 답변 + 자유 서술 | 3안 (아래 3번) | 화면 없음. 캔버스는 1안 고정 데이터 |
-| C | 운영 절차 조회 | 선택한 안의 id | 단계별 절차 (아래 5번) | 있음 (`GUIDE`) |
-| D | 서비스 설명 조회 | 서비스 종류 또는 노드 id | 선택 이유, 대안 (아래 4번) | 부분 있음 (`role`만) |
-
-생성에 최대 60초가 걸릴 수 있으므로 B의 응답 방식(대기 또는 폴링)은 미정이다. (질문 3)
-
-모든 예시는 프론트엔드가 필요로 하는 모양을 보여 주는 **임시 예시**다. 필드명, 값, 숫자(비용 등)는 확정이 아니며, 비용은 형식 확인용 가짜 값이다. 실제 비용은 백엔드가 가격 데이터로 계산한다.
-공통 규칙(임시): 경로는 `/api/v1/...`, 에러 응답은 `{ code, message }` 형식이다. 둘 다 팀이 확정하지 않았다.
+공통 규칙 (확정)
+- 경로는 `/api/v1/...`이고, 여러 단어는 kebab-case다. JSON 필드명은 camelCase다. enum 값은 snake_case다.
+- **프론트는 `/api/v1/...` 상대 경로만 호출한다.** 백엔드 주소는 프록시가 처리한다. (인프라 #3)
+- 에러 응답은 `{ code, message, retryable, requestId }`이고 `code`는 UPPER_SNAKE_CASE다. `requestId`는 헤더 `X-Request-Id`에도 온다.
+- 프론트는 `message`를 그대로 보여 주지 않고 `code`별 한국어 문구로 매핑한다. `retryable`이 `true`일 때만 다시 시도 버튼을 보여 준다.
+- HTTP 상태: 400 `INVALID_REQUEST`, 401 `UNAUTHORIZED`(Cognito 연결 후), 404 `NOT_FOUND`, 429 `RATE_LIMITED`, 500 `INTERNAL_ERROR`, D 전용 502 `EXPLANATION_FAILED`와 504 `LLM_TIMEOUT`. 생성 실패는 HTTP 에러가 아니라 B'의 `status: failed`다. 표는 `coding-conventions.md` 8번에 있다.
+- 입력 검증 실패는 FastAPI 기본 422가 아니라 400이다.
+- 작업 상태 값: `queued`, `running`, `completed`, `failed`.
+- 비용 수치는 백엔드가 준 값만 표시한다. 프론트가 계산하거나 변환하지 않는다. 천 단위 콤마만 붙인다.
+- 사용자 식별은 Cognito 연결 전까지 임시 `X-User-Id` 헤더다. 프론트는 지금은 보내지 않아도 된다.
+- AWS 환경에서 API Gateway가 직접 보내는 에러는 `X-Request-Id` 대신 `x-amzn-RequestId` 헤더가 온다. `requestId`는 본문 값을 쓴다. (인프라 #7)
+- 로그인은 Cognito 호스팅 로그인 페이지를 쓴다. 로그인 후 `Authorization` 헤더로 API를 호출한다. (아래 5번, 6번 질문 18)
 
 ## 3. 프로토타입에는 있지만 API로 만들지 않는 것
-
 범위 제외 항목이라 데이터 요구사항에 넣지 않는다. 구현 단계로 넘어갈 때 제거 대상이다.
-
 - AI 채팅 응답과 컨텍스트 (대화형 수정)
 - Deploy 버튼, 배포 상태 (원클릭 배포)
 - 스택 선택 목록 (설계 히스토리·공유 링크는 P1)
 - 알림 벨, presence 커서 (실시간 협업)
 
 ## 4. 목 데이터 파일 구성 (제안)
+프로토타입과 Next.js가 같은 모양을 쓰도록 파일로 나누어 둔다. 모양은 백엔드 계약 예시(`ArchiMate-Backend/contracts/examples/`)를 **복사**해서 쓴다. (submodule은 쓰지 않는다. 백엔드 #11)
 
-프로토타입과 Next.js가 같은 모양을 쓰도록, 각 API 섹션의 JSON 예시를 아래처럼 파일로 나누어 둔다.
+| 파일 | 내용 | 계약 예시 |
+| --- | --- | --- |
+| `interview-questions.json` | A (프론트 상수로 사용) | `interview_questions.json` |
+| `design-job-accepted.json` | B 요청 직후 `202` | `design_job_accepted.json` |
+| `design-job-running.json` | 폴링 중 (일부 안만 완료) | `design_job_running.json` |
+| `design-job-completed.json` | 폴링 완료 (3안) | `design_job_completed.json` |
+| `design-job-partial-failed.json` | 일부 안 실패 (`status: completed`) | `design_job_partial_failed.json` (백엔드가 추가 예정) |
+| `design-job-failed.json` | 전부 실패 (`status: failed`) | `design_job_failed.json` (백엔드가 추가 예정) |
+| `guide-{designId}.json` | C 응답 | `operations_guide_minimal_cost.json` |
+| `explanation-{nodeId}.json` | D 응답 | `node_explanation_app_db.json` |
 
-| 파일 | 내용 |
-| --- | --- |
-| `interview-questions.json` | A 응답 |
-| `designs.json` | B 응답 |
-| `guide-{designId}.json` | C 응답 |
-| `explanation-{nodeId}.json` | D 응답 |
-
-프로토타입은 순수 JS라서 `fetch`로 읽거나 `app.js` 안의 상수로 둔다. 어느 쪽이든 모양은 같게 유지한다.
+- 계약 예시의 `monthlyCost`는 비용 계산 PR(백엔드 #18)이 머지되기 전이라 `null`이다. 비용 표시용 목 데이터는 `B-designs.md`의 월 비용 예시 형식을 쓴다.
+- 백엔드는 모킹 LLM에 지연 옵션(`MOCK_DELAY_S`)을 넣어 `queued → running → completed`와 안이 하나씩 채워지는 흐름을 재현할 수 있게 한다. (백엔드 #11)
+- 타입은 `contracts/openapi.json`으로 생성할 수 있다. (예: `pnpm dlx openapi-typescript contracts/openapi.json -o src/api/schema.d.ts`) PR #17 머지 후 사용한다.
+- 로컬 실행: `pip install -e ".[dev]"` 후 `LLM_PROVIDER=mock uvicorn archimate.api.app:app --reload --app-dir src`, Swagger는 `http://localhost:8000/docs`다. 개발 서버는 Railway에 11.24.(화)까지 올리는 것이 목표다.
+- 프로토타입은 순수 JS라서 `fetch`로 읽거나 `app.js` 안의 상수로 둔다. 어느 쪽이든 모양은 같게 유지한다.
 
 ## 5. 스키마 확정 후 반영 사항
+프론트 초안(2026-11-19)과 백엔드·인프라 답변의 차이다. A~D 파일에는 이미 반영했다.
 
-아직 없음. (백엔드와 필드명, 타입, 허용 값이 확정되면 차이점을 여기에 기록한다.)
+| 항목 | 프론트 초안 | 확정·계약 | 영향 |
+| --- | --- | --- | --- |
+| 필드명 표기법 | 임시 camelCase | camelCase 확정 | 타입, zod 스키마 |
+| 인터뷰 질문 | `GET /api/v1/interview/questions` | API 없음, 프론트 상수 7개 + 자유 서술 | 상수 파일 생성 |
+| 질문 `inputType` | `single`, `number`, `text` | `multi` 추가 (`dataStorage`는 배열) | 입력 요소 |
+| 질문·선택지 필드 | `help`, `unit`, `options[].value/label` | `placeholder`, `options[].description` 추가. 없는 값은 `null` | 인터뷰 화면 |
+| 답변 값 | `web`, `lt100` 등 | `web_app`, `under_100` 등. 질문 8개 | 요청 구성 |
+| `awsExperience` 값 | `none`, `some`, `experienced` | `none`, `beginner`, `intermediate`, `advanced` | 선택지 |
+| 3안 생성 | `POST` → `200` 동기 | `POST` → `202 { jobId }` + `GET jobs/{jobId}` 폴링 | 로딩 화면, 폴링 |
+| 작업 상태 | 없음 | `queued`, `running`, `completed`, `failed` | 로딩·에러 화면 |
+| 일부 실패 | 없음 | `failures[]`, `status: completed`, 안 개수 1~3 | 탭 개수 가변 |
+| `tier` | `min`, `balanced`, `scale` | `minimal_cost`, `balanced`, `scalable` | 탭 이름 매핑 |
+| 안 식별자 | `designs[].id` | `{jobId}_{tier}`, 이 값이 `designId` | C, D 호출 |
+| `difficulty` | `{ level, label }` | `level`은 1~3, `reason` 추가 | 배지, 툴팁 |
+| 안 부가 정보 | 없음 | `title`, `pros[]`, `cons[]`, `budgetNote`, `scalingPath[]` | 비교 화면, 로드맵 |
+| 좌표 | `position` 선택 | 없음. 프론트 자동 배치 | 캔버스 레이아웃 |
+| `serviceType` | `apigw` 등 임시 | 21종 (B 파일 참고), 사용자 노드 `users` | 아이콘·색상 매핑 |
+| 노드 필드 | `id`, `serviceType`, `label`, `groupId` | `role`, `reason`, `usage` 추가 | 설명 패널 즉시 표시 |
+| 엣지 | `{ from, to }` | `label` 추가 | 엣지 라벨 |
+| 그룹 | `{ id, label, kind }` | `parentId` 추가, `kind` 6종 | 중첩 그룹 |
+| 운영 절차 | `steps[].cli` | `cli` 없음, `consolePath` 추가. `warn`, `consolePath`는 없으면 `null` | 절차 패널 |
+| 완료 체크 키 | `steps[].id` | `guide:{designId}:{stepId}` (`localStorage`) | 상태 저장 |
+| 서비스 설명 `D` | `reason`, `alternatives[]`, `monthlyCost` | `cautions[]` 추가. 클릭 시 생성, 30일 캐시. 실패는 HTTP 502·504·429·404 | 설명 패널 로딩·실패 |
+| 에러 응답 | `{ code, message }`, 422 | `{ code, message, retryable, requestId }`, 입력 오류는 400 | API 클라이언트 |
+| 월 비용 통화 | USD 임시 | **KRW 표시** + USD 원금액, 환율, 기준일 제공 (C안) | 비용 표 |
+| 월 비용 필드 | `total`, `currency`, `freeTier`, `items[]` | `totalUsd`, `exchangeRate`, `exchangeRateDate`, `priceDate`, `overBudget` 추가. `items[]`에 `amountUsd` | 비용 표 |
+| 비용 계산 불가 노드 | 미정 | `items[]`에 `amount: null`, `note`에 사유. 합계에서 빠짐. 사용자 노드는 `items[]`에 없음 | 비용 표 |
+| 설계 보관 | 미정 | job·설계 결과 30일 (DynamoDB TTL). 만료 후 404 | 새로고침 처리 |
+| 새로고침 복원 | 미정 | `GET jobs/{jobId}`로 다시 조회. 새 API 없음 | 라우팅 |
+| 접근 제한 | 미정 | 다른 사용자의 id는 404 (403 아님) | 에러 처리 |
+| 로그인 | 없음 (MVP 범위에 없음) | Cognito 호스팅 로그인 페이지, 아이디는 이메일, 계정은 팀이 1개 생성(데모·파일럿용). 직접 가입은 이후 구현 | 인증 흐름, `Authorization` 헤더 |
+| 환경 변수 | 없음 | `NEXT_PUBLIC_COGNITO_USER_POOL_ID`, `_CLIENT_ID`, `_REGION`, `_DOMAIN` (인프라 1차 배포 후 전달) | `.env.example` |
+| 프론트 호출 방식 | 환경별 주소 | `/api/v1` 상대 경로만, 프록시가 백엔드로 전달, CORS 불필요 | API 클라이언트 |
+| 라우팅 | `/designs/{id}` 같은 동적 경로 | 정적 내보내기라 쿼리 문자열 (예: `/designs/?jobId=...&tier=...`), `trailingSlash: true` | Next.js 설정 |
 
 ## 6. 의사결정 사항
+질문 번호는 다른 문서가 참조하므로 기존 번호를 유지한다. 해결된 질문은 삭제했다.
 
-1. 노드 좌표를 서버가 줄지, 프론트가 그룹 구조로 자동 배치할지. (`product.md`는 자동 배치를 프론트엔드 담당으로 둠)
-2. 인터뷰 질문을 API로 받을지 프론트에 고정할지.
-3. 3안 생성 응답을 한 번에 기다릴지, 작업 id를 받아 폴링할지.
-4. 월 비용 통화(USD 또는 KRW)와 환율 처리 위치.
-5. `serviceType` 허용 값 목록. 주요 8종 외 서비스(Cognito, WAF 등)를 어디까지 다룰지.
-6. 서비스 선택 이유·대안을 3안 응답에 포함할지, 별도 API로 받을지.
-7. 운영 절차에 AWS CLI 명령을 보여 줄지. (초보자 대상이므로 콘솔 절차 위주가 나을 수 있음)
-8. 완료 체크 상태를 `localStorage`에만 둘지. (MVP 저장 데이터 범위 결정과 연동)
+해결됨
+- 질문 1 노드 좌표: 프론트 자동 배치
+- 질문 2 인터뷰 질문: 프론트 상수
+- 질문 3 응답 방식: 비동기 폴링
+- 질문 4 월 비용 통화: KRW 표시 + USD 근거
+- 질문 5 `serviceType` 허용 값: 계약 21종
+- 질문 6 선택 이유·대안: D 별도 API (클릭 시 생성). 노드의 `role`, `reason`은 B에도 포함
+- 질문 8 완료 체크 저장: `localStorage` (키 `guide:{designId}:{stepId}`)
+- 질문 9 `operationsGuide`와 C: 같은 값. 3안 화면은 B 것을 쓰고 C는 새로고침 시에만
+- 질문 10 에러 `code`별 HTTP 상태: `coding-conventions.md` 8번
+- 질문 11 폴링 간격: 3초, 최대 약 3분. 결과 보관 30일
+- 질문 12 `queue`와 `queued`: 계약의 `queued`
+- 질문 13 일부 안 실패: `status: completed` + `failures[]`. 1안 축소는 `designs` 길이 1, 남길 안은 `minimal_cost` 제안
+- 질문 15 `monthlyCost` 시점: 안이 끝날 때마다 함께 계산·저장. 계산 불가 노드는 `amount: null`
+- 질문 16 계약 파일 공유: 복사해서 사용, `[contract]` PR로 변경 알림
+- 질문 17 상태 전달 방식: **폴링 확정** (3초, 최대 약 3분). 응답 모양이 같아서 나중에 SSE로 바꿔도 받는 부분만 바꾸면 된다. (백엔드 #7, 2026-11-23 댓글)
+- 질문 18 로그인 방식: **Cognito 호스팅 로그인 페이지**, 아이디는 이메일, 계정은 팀이 1개 만들어 데모·파일럿용으로만 쓴다. 직접 가입 기능은 이후 구현. 환경 변수는 `NEXT_PUBLIC_COGNITO_*` 4개. (인프라 #4, #7, 2026-11-23 댓글)
+- 비용 형식(질문 4): 프론트도 C안을 수락했다. (백엔드 #10, 2026-11-23 댓글)
+
+남은 질문
+7. 운영 절차에 AWS CLI 명령을 보여 줄지. 계약에는 `cli`가 없다. 프론트와 API·비용은 콘솔 절차만(A안)에 찬성했고, 백엔드(AI 생성)의 최종 확인을 기다린다. (백엔드 #13)
+14. `nat_gateway`가 허용 목록에 있는 이유 (`product.md`는 NAT Gateway를 피하라고 함). 백엔드에서 답을 받지 못했다.
+19. **Node 버전 값.** 인프라가 Node 26으로 정했고 프론트가 다른 버전을 원하는지 묻고 있다. (인프라 #2)
+20. **로컬 개발 프록시.** `next dev`에서만 프록시를 켤지, 백엔드가 `http://localhost:3000`을 CORS 허용하게 할지 프론트가 정해야 한다. (인프라 #3) 정적 내보내기에서는 `next.config` `rewrites`를 빌드에 쓸 수 없다.
+21. `freeText` 길이 제한 (백엔드 확인 중)
+22. `nodeIds[]`가 `architecture.nodes[].id`와 맞는지 생성 단계에서 검증하는지 (백엔드(AI 생성) 확인 중, 백엔드 #13)
+23. 5일차 게이트 판단과 1안 축소 여부: 백엔드(AI 생성)가 판단하고 백엔드 #14에 남긴다.
+24. 인프라 #1(Vercel Hobby 계정·연동 방식)은 아직 답변이 없다. 계정 소유자는 인프라 #5에서 HJTN으로 정해졌다.
