@@ -1,0 +1,25 @@
+{
+  "jobId": "job_demo",
+  "status": "failed",
+  "designs": [],
+  "failures": [
+    {
+      "tier": "minimal_cost",
+      "reason": "LLM_RATE_LIMITED"
+    },
+    {
+      "tier": "balanced",
+      "reason": "LLM_RATE_LIMITED"
+    },
+    {
+      "tier": "scalable",
+      "reason": "LLM_RATE_LIMITED"
+    }
+  ],
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "요청이 많아요. 잠시 후 다시 시도해 주세요.",
+    "retryable": true,
+    "requestId": "job_demo"
+  }
+}

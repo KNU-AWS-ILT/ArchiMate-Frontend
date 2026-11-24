@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "Alternative": {
+      "properties": {
+        "serviceType": {
+          "$ref": "#/$defs/AwsService"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "comparison": {
+          "title": "Comparison",
+          "type": "string"
+        }
+      },
+      "required": [
+        "serviceType",
+        "name",
+        "comparison"
+      ],
+      "title": "Alternative",
+      "type": "object"
+    },
+    "AwsService": {
+      "description": "다이어그램 노드의 서비스 종류 (JSON 필드 `serviceType`).\n\nLLM은 이 목록 밖의 서비스를 출력할 수 없다(스키마로 강제).\n프론트는 이 값으로 AWS 공식 아이콘을 매핑한다.",
+      "enum": [
+        "users",
+        "lambda",
+        "s3",
+        "dynamodb",
+        "rds",
+        "ec2",
+        "cloudfront",
+        "api_gateway",
+        "alb",
+        "ecs_fargate",
+        "nat_gateway",
+        "elasticache",
+        "cognito",
+        "route53",
+        "sqs",
+        "sns",
+        "eventbridge",
+        "cloudwatch",
+        "secrets_manager",
+        "ses",
+        "bedrock"
+      ],
+      "title": "AwsService",
+      "type": "string"
+    },
+    "NodeCost": {
+      "description": "노드 1개의 월 비용 (Issue #10). 3안 응답의 monthlyCost.items[]와 같은 값.",
+      "properties": {
+        "currency": {
+          "const": "KRW",
+          "default": "KRW",
+          "title": "Currency",
+          "type": "string"
+        },
+        "amount": {
+          "description": "월 비용(원)",
+          "title": "Amount",
+          "type": "integer"
+        },
+        "amountUsd": {
+          "description": "월 비용(USD)",
+          "title": "Amountusd",
+          "type": "number"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "계산 근거",
+          "title": "Note"
+        }
+      },
+      "required": [
+        "amount",
+        "amountUsd"
+      ],
+      "title": "NodeCost",
+      "type": "object"
+    },
+    "ServiceCategory": {
+      "description": "노드 설명(D) 화면의 분류 표시용.",
+      "enum": [
+        "external",
+        "network",
+        "compute",
+        "storage",
+        "database",
+        "security",
+        "integration",
+        "monitoring",
+        "ai"
+      ],
+      "title": "ServiceCategory",
+      "type": "string"
+    }
+  },
+  "description": "D 응답. name·category는 SERVICE_INFO, role은 설계 노드, 나머지는 ExplanationDraft.",
+  "properties": {
+    "nodeId": {
+      "title": "Nodeid",
+      "type": "string"
+    },
+    "serviceType": {
+      "$ref": "#/$defs/AwsService"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "category": {
+      "$ref": "#/$defs/ServiceCategory"
+    },
+    "role": {
+      "title": "Role",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "alternatives": {
+      "items": {
+        "$ref": "#/$defs/Alternative"
+      },
+      "title": "Alternatives",
+      "type": "array"
+    },
+    "cautions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Cautions",
+      "type": "array"
+    },
+    "monthlyCost": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NodeCost"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "API·비용 담당이 채움"
+    }
+  },
+  "required": [
+    "nodeId",
+    "serviceType",
+    "name",
+    "category",
+    "role",
+    "reason",
+    "alternatives",
+    "cautions"
+  ],
+  "title": "NodeExplanation",
+  "type": "object"
+}

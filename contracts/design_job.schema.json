@@ -1,0 +1,925 @@
+{
+  "$defs": {
+    "Architecture": {
+      "description": "다이어그램 데이터. 좌표는 프론트가 그룹 구조로 자동 배치한다.",
+      "properties": {
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "title": "Nodes",
+          "type": "array"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/Edge"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/Group"
+          },
+          "title": "Groups",
+          "type": "array"
+        }
+      },
+      "required": [
+        "nodes",
+        "edges",
+        "groups"
+      ],
+      "title": "Architecture",
+      "type": "object"
+    },
+    "AwsService": {
+      "description": "다이어그램 노드의 서비스 종류 (JSON 필드 `serviceType`).\n\nLLM은 이 목록 밖의 서비스를 출력할 수 없다(스키마로 강제).\n프론트는 이 값으로 AWS 공식 아이콘을 매핑한다.",
+      "enum": [
+        "users",
+        "lambda",
+        "s3",
+        "dynamodb",
+        "rds",
+        "ec2",
+        "cloudfront",
+        "api_gateway",
+        "alb",
+        "ecs_fargate",
+        "nat_gateway",
+        "elasticache",
+        "cognito",
+        "route53",
+        "sqs",
+        "sns",
+        "eventbridge",
+        "cloudwatch",
+        "secrets_manager",
+        "ses",
+        "bedrock"
+      ],
+      "title": "AwsService",
+      "type": "string"
+    },
+    "Checklist": {
+      "properties": {
+        "key": {
+          "description": "'cost'(비용 이상 대응) 또는 'incident'(장애 대응)",
+          "title": "Key",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "title",
+        "items"
+      ],
+      "title": "Checklist",
+      "type": "object"
+    },
+    "CostItem": {
+      "description": "노드 1개의 월 비용. 계산 대상이 아니거나 사용량이 없으면 amount·amountUsd가 null.",
+      "properties": {
+        "nodeId": {
+          "title": "Nodeid",
+          "type": "string"
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "월 비용(원). 원 단위 반올림",
+          "title": "Amount"
+        },
+        "amountUsd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "월 비용(USD). 소수 둘째 자리 반올림",
+          "title": "Amountusd"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "계산 근거 또는 계산하지 못한 이유",
+          "title": "Note"
+        }
+      },
+      "required": [
+        "nodeId",
+        "amount",
+        "amountUsd"
+      ],
+      "title": "CostItem",
+      "type": "object"
+    },
+    "DesignResult": {
+      "description": "3안 중 1안 = LLM 설계(Design) + 저장 id + 월 비용.",
+      "properties": {
+        "title": {
+          "description": "안 이름, 예: '서버리스 최소비용 구성'",
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "description": "구성 요약 1~2문장",
+          "title": "Summary",
+          "type": "string"
+        },
+        "difficulty": {
+          "$ref": "#/$defs/Difficulty"
+        },
+        "architecture": {
+          "$ref": "#/$defs/Architecture"
+        },
+        "pros": {
+          "description": "장점 2~4개",
+          "items": {
+            "type": "string"
+          },
+          "title": "Pros",
+          "type": "array"
+        },
+        "cons": {
+          "description": "단점·한계 2~4개",
+          "items": {
+            "type": "string"
+          },
+          "title": "Cons",
+          "type": "array"
+        },
+        "budgetNote": {
+          "description": "예산 대비 적합성 코멘트. 금액 숫자는 쓰지 않는다",
+          "title": "Budgetnote",
+          "type": "string"
+        },
+        "scalingPath": {
+          "description": "성장 로드맵: 사용자 1만 명, 10만 명이 될 때 바꿀 부분 (단계별 1~3개)",
+          "items": {
+            "type": "string"
+          },
+          "title": "Scalingpath",
+          "type": "array"
+        },
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "operationsGuide": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OperationsGuide"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "이 안의 배포·운영 절차. 생성에 실패하면 null"
+        },
+        "id": {
+          "description": "안 id. C·D 조회 경로에 쓴다",
+          "title": "Id",
+          "type": "string"
+        },
+        "monthlyCost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MonthlyCost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "API·비용 담당이 채움"
+        }
+      },
+      "required": [
+        "title",
+        "summary",
+        "difficulty",
+        "architecture",
+        "pros",
+        "cons",
+        "budgetNote",
+        "scalingPath",
+        "tier",
+        "id"
+      ],
+      "title": "DesignResult",
+      "type": "object"
+    },
+    "Difficulty": {
+      "properties": {
+        "level": {
+          "description": "운영 난이도 1(쉬움)~3(어려움)",
+          "enum": [
+            1,
+            2,
+            3
+          ],
+          "title": "Level",
+          "type": "integer"
+        },
+        "reason": {
+          "description": "이 난이도인 이유 한 줄",
+          "title": "Reason",
+          "type": "string"
+        },
+        "label": {
+          "readOnly": true,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "reason",
+        "label"
+      ],
+      "title": "Difficulty",
+      "type": "object"
+    },
+    "Edge": {
+      "properties": {
+        "from": {
+          "description": "출발 노드 id",
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "description": "도착 노드 id",
+          "title": "To",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "예: 'HTTPS 요청', '이미지 업로드'",
+          "title": "Label"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "ErrorCode": {
+      "enum": [
+        "INVALID_REQUEST",
+        "UNAUTHORIZED",
+        "NOT_FOUND",
+        "RATE_LIMITED",
+        "DESIGN_GENERATION_FAILED",
+        "LLM_TIMEOUT",
+        "EXPLANATION_FAILED",
+        "INTERNAL_ERROR"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    },
+    "ErrorResponse": {
+      "description": "Issue #7 B안. 프론트는 code별 한국어 문구로 매핑한다.",
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "description": "같은 요청을 다시 시도해도 되는지 ('다시 시도' 버튼 표시)",
+          "title": "Retryable",
+          "type": "boolean"
+        },
+        "requestId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "문의·로그 추적용",
+          "title": "Requestid"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "Group": {
+      "properties": {
+        "id": {
+          "description": "영문 소문자·숫자·밑줄, 예: vpc_main",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/GroupKind"
+        },
+        "label": {
+          "description": "표시 이름, 예: 'VPC (10.0.0.0/16)'",
+          "title": "Label",
+          "type": "string"
+        },
+        "parentId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "상위 그룹 id. 최상위면 null",
+          "title": "Parentid"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "label"
+      ],
+      "title": "Group",
+      "type": "object"
+    },
+    "GroupKind": {
+      "description": "다이어그램 묶음(프론트가 중첩 박스로 그림).",
+      "enum": [
+        "plain",
+        "region",
+        "vpc",
+        "availability_zone",
+        "public_subnet",
+        "private_subnet"
+      ],
+      "title": "GroupKind",
+      "type": "string"
+    },
+    "GuidePhase": {
+      "properties": {
+        "key": {
+          "description": "단계 id. 영문 소문자·숫자·밑줄",
+          "title": "Key",
+          "type": "string"
+        },
+        "title": {
+          "description": "단계 이름, 예: '저장소·데이터베이스'",
+          "title": "Title",
+          "type": "string"
+        },
+        "sub": {
+          "description": "보조 문구, 예: '1단계'",
+          "title": "Sub",
+          "type": "string"
+        },
+        "intro": {
+          "description": "단계 소개 한 줄",
+          "title": "Intro",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/GuideStep"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "title",
+        "sub",
+        "intro",
+        "steps"
+      ],
+      "title": "GuidePhase",
+      "type": "object"
+    },
+    "GuideStep": {
+      "properties": {
+        "id": {
+          "description": "절차 id. 영문 소문자·숫자·밑줄, 안 안에서 고유 (완료 체크 저장 키)",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "desc": {
+          "description": "무엇을 왜 하는지 1~2문장",
+          "title": "Desc",
+          "type": "string"
+        },
+        "nodeIds": {
+          "description": "캔버스에서 강조할 노드 id",
+          "items": {
+            "type": "string"
+          },
+          "title": "Nodeids",
+          "type": "array"
+        },
+        "todo": {
+          "description": "따라 할 일 2~5개. 초보자가 그대로 따라 할 수 있게",
+          "items": {
+            "type": "string"
+          },
+          "title": "Todo",
+          "type": "array"
+        },
+        "consolePath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS 콘솔 경로, 예: 'Lambda > 함수 > 함수 생성'",
+          "title": "Consolepath"
+        },
+        "warn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "주의 문구 (없으면 null)",
+          "title": "Warn"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "desc",
+        "nodeIds",
+        "todo"
+      ],
+      "title": "GuideStep",
+      "type": "object"
+    },
+    "JobStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
+    "MonthlyCost": {
+      "description": "1안의 월 비용 (Issue #10 C안). 프론트는 값을 그대로 표시만 한다.\n\n- total = items[].amount 합 (null 제외) — 백엔드가 보장\n- 금액은 '항상 무료' 한도를 뺀 실제 청구 예상액. 가입 크레딧은 반영하지 않는다",
+      "properties": {
+        "currency": {
+          "const": "KRW",
+          "default": "KRW",
+          "title": "Currency",
+          "type": "string"
+        },
+        "total": {
+          "description": "월 합계(원)",
+          "title": "Total",
+          "type": "integer"
+        },
+        "totalUsd": {
+          "description": "월 합계(USD)",
+          "title": "Totalusd",
+          "type": "number"
+        },
+        "exchangeRate": {
+          "description": "적용 환율 (1 USD당 원)",
+          "title": "Exchangerate",
+          "type": "number"
+        },
+        "exchangeRateDate": {
+          "description": "환율 기준일",
+          "format": "date",
+          "title": "Exchangeratedate",
+          "type": "string"
+        },
+        "priceDate": {
+          "description": "AWS 단가 기준일",
+          "format": "date",
+          "title": "Pricedate",
+          "type": "string"
+        },
+        "freeTier": {
+          "description": "무료 한도 안이라 월 0원인지",
+          "title": "Freetier",
+          "type": "boolean"
+        },
+        "freeTierNote": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "무료 한도 안내 문구",
+          "title": "Freetiernote"
+        },
+        "overBudget": {
+          "description": "total이 인터뷰 월 예산(monthlyBudget)을 넘는지",
+          "title": "Overbudget",
+          "type": "boolean"
+        },
+        "items": {
+          "description": "사용자 노드를 뺀 모든 노드",
+          "items": {
+            "$ref": "#/$defs/CostItem"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "total",
+        "totalUsd",
+        "exchangeRate",
+        "exchangeRateDate",
+        "priceDate",
+        "freeTier",
+        "overBudget",
+        "items"
+      ],
+      "title": "MonthlyCost",
+      "type": "object"
+    },
+    "Node": {
+      "properties": {
+        "id": {
+          "description": "영문 소문자·숫자·밑줄, 예: api_lambda. 사용자 노드는 'users'",
+          "title": "Id",
+          "type": "string"
+        },
+        "serviceType": {
+          "$ref": "#/$defs/AwsService"
+        },
+        "label": {
+          "description": "표시 이름, 예: 'API 처리 함수'",
+          "title": "Label",
+          "type": "string"
+        },
+        "groupId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "소속 그룹 id. 그룹 밖이면 null",
+          "title": "Groupid"
+        },
+        "role": {
+          "description": "이 구성에서 하는 일 (한 줄)",
+          "title": "Role",
+          "type": "string"
+        },
+        "reason": {
+          "description": "이 요구사항에서 이 서비스를 고른 이유 한 줄. 자세한 설명은 노드 설명(D)이 만든다",
+          "title": "Reason",
+          "type": "string"
+        },
+        "usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Usage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "비용 계산용 월 사용량. 사용자 노드는 null"
+        }
+      },
+      "required": [
+        "id",
+        "serviceType",
+        "label",
+        "role",
+        "reason"
+      ],
+      "title": "Node",
+      "type": "object"
+    },
+    "OperationsGuide": {
+      "properties": {
+        "phases": {
+          "description": "배포 순서대로. 마지막 단계는 운영(비용 알람 포함)",
+          "items": {
+            "$ref": "#/$defs/GuidePhase"
+          },
+          "title": "Phases",
+          "type": "array"
+        },
+        "checklists": {
+          "items": {
+            "$ref": "#/$defs/Checklist"
+          },
+          "title": "Checklists",
+          "type": "array"
+        }
+      },
+      "required": [
+        "phases",
+        "checklists"
+      ],
+      "title": "OperationsGuide",
+      "type": "object"
+    },
+    "Tier": {
+      "description": "3안 구분.",
+      "enum": [
+        "minimal_cost",
+        "balanced",
+        "scalable"
+      ],
+      "title": "Tier",
+      "type": "string"
+    },
+    "TierFailure": {
+      "properties": {
+        "tier": {
+          "$ref": "#/$defs/Tier"
+        },
+        "reason": {
+          "description": "실패 이유 코드 (내부 진단용). 값: LLM_RATE_LIMITED(AI 호출 한도 초과 (재시도 후에도)), LLM_TIMEOUT(AI 응답 시간 초과 또는 전체 기한 초과), LLM_INVALID_OUTPUT(AI 출력이 재시도 후에도 검증을 통과하지 못함), LLM_PROVIDER_ERROR(AI 제공자 오류 (5xx, 네트워크 등)), LLM_CONFIG_ERROR(AI 설정 오류 (API 키, 모델 권한 등)), TIER_INTERNAL_ERROR(AI 호출 밖의 예상 못 한 오류), TIER_CALLBACK_FAILED(비용 계산·저장 중 오류), INTERNAL_ERROR(작업이 중단됨 (서버 재시작, 시간 초과로 강제 종료)), DESIGN_GENERATION_FAILED(원인 정보 없이 전체 실패). 프론트는 이 값으로 문구를 나누지 않고 안별 공통 문구를 쓴다",
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "reason"
+      ],
+      "title": "TierFailure",
+      "type": "object"
+    },
+    "Usage": {
+      "description": "비용 계산용 월 사용량 추정치. 서비스별 필수 항목은 REQUIRED_USAGE_FIELDS 참고.\n\n⚠️ 필드 구성은 비용 계산 담당과 합의 대상.",
+      "properties": {
+        "monthlyRequests": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "월 요청 수",
+          "title": "Monthlyrequests"
+        },
+        "avgDurationMs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lambda 평균 실행 시간(ms)",
+          "title": "Avgdurationms"
+        },
+        "memoryMb": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lambda·ECS Fargate 태스크 메모리(MB)",
+          "title": "Memorymb"
+        },
+        "storageGb": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "저장 용량(GB)",
+          "title": "Storagegb"
+        },
+        "dataTransferOutGb": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "월 외부 전송량(GB)",
+          "title": "Datatransferoutgb"
+        },
+        "monthlyReads": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DynamoDB 월 읽기 요청 수",
+          "title": "Monthlyreads"
+        },
+        "monthlyWrites": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DynamoDB 월 쓰기 요청 수",
+          "title": "Monthlywrites"
+        },
+        "instanceType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "예: t4g.micro, db.t4g.micro",
+          "title": "Instancetype"
+        },
+        "instanceCount": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "인스턴스/태스크 수",
+          "title": "Instancecount"
+        },
+        "hoursPerMonth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "월 가동 시간(상시 730)",
+          "title": "Hourspermonth"
+        },
+        "multiAz": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "RDS Multi-AZ 여부",
+          "title": "Multiaz"
+        },
+        "vcpu": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ECS Fargate 태스크 vCPU (0.25, 0.5, 1, 2, 4 중 하나)",
+          "title": "Vcpu"
+        }
+      },
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "jobId": {
+      "title": "Jobid",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "designs": {
+      "description": "끝난 안부터 채워짐",
+      "items": {
+        "$ref": "#/$defs/DesignResult"
+      },
+      "title": "Designs",
+      "type": "array"
+    },
+    "failures": {
+      "items": {
+        "$ref": "#/$defs/TierFailure"
+      },
+      "title": "Failures",
+      "type": "array"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ErrorResponse"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "status=failed일 때"
+    }
+  },
+  "required": [
+    "jobId",
+    "status"
+  ],
+  "title": "DesignJob",
+  "type": "object"
+}

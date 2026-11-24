@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "jobId": {
+      "title": "Jobid",
+      "type": "string"
+    }
+  },
+  "required": [
+    "jobId"
+  ],
+  "title": "DesignJobAccepted",
+  "type": "object"
+}

@@ -1,0 +1,53 @@
+{
+  "$defs": {
+    "ErrorCode": {
+      "enum": [
+        "INVALID_REQUEST",
+        "UNAUTHORIZED",
+        "NOT_FOUND",
+        "RATE_LIMITED",
+        "DESIGN_GENERATION_FAILED",
+        "LLM_TIMEOUT",
+        "EXPLANATION_FAILED",
+        "INTERNAL_ERROR"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    }
+  },
+  "description": "Issue #7 B안. 프론트는 code별 한국어 문구로 매핑한다.",
+  "properties": {
+    "code": {
+      "$ref": "#/$defs/ErrorCode"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "retryable": {
+      "description": "같은 요청을 다시 시도해도 되는지 ('다시 시도' 버튼 표시)",
+      "title": "Retryable",
+      "type": "boolean"
+    },
+    "requestId": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "문의·로그 추적용",
+      "title": "Requestid"
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "retryable"
+  ],
+  "title": "ErrorResponse",
+  "type": "object"
+}
