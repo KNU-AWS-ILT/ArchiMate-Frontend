@@ -64,6 +64,14 @@
     bedrock:         { name: 'Amazon Bedrock', cat: 'ml', icon: 'spark', role: '생성형 AI 모델을 API로 사용합니다.' },
   };
 
+  // 직접 구성하는 캔버스에서 노드 이름으로 쓰는 한글 이름
+  const KO = {
+    users: '사용자', lambda: '서버리스 함수', ec2: '가상 서버', ecs_fargate: '컨테이너', s3: '파일 저장소', dynamodb: 'NoSQL DB',
+    rds: '관계형 DB', elasticache: '캐시', cloudfront: 'CDN', api_gateway: 'API 입구', alb: '로드밸런서', nat_gateway: 'NAT 게이트웨이',
+    route53: '도메인(DNS)', cognito: '회원 인증', secrets_manager: '비밀 보관', sqs: '작업 대기열', sns: '알림 발행',
+    eventbridge: '이벤트 버스', ses: '이메일 발송', cloudwatch: '로그·알람', bedrock: '생성형 AI',
+  };
+
   // ---------- 3안 (백엔드 DesignJob) ----------
   const TIER_ORDER = ['minimal_cost', 'balanced', 'scalable'];
   const TIER_LABEL = { minimal_cost: '최소비용형', balanced: '균형형', scalable: '확장형' };
@@ -80,7 +88,7 @@
   const fmtKRW = n => `${Number(n).toLocaleString('ko-KR')}원`;
 
   const NW = 96, NH = 76;
-  let nodes = [], byId = {}, edges = [], groups = [], GUIDE = [], allSteps = [], checklists = [], current = null;
+  let nodes = [], byId = {}, edges = [], groups = [], GUIDE = [], allSteps = [], checklists = [], current = null, isCustom = false;
 
   // 좌표가 없는 구성도를 자동 배치한다. x: 사용자에서 시작하는 흐름 순서, y: 그룹(리전·VPC·서브넷)별 띠
   function layoutArchitecture(arch) {
@@ -151,7 +159,7 @@
     tx: 0, ty: 0, scale: 1,
     selected: null, focus: new Set(),
     tab: null, openStep: null,
-    edit: false, deployed: false,
+    edit: false, deployed: false, link: false, linkFrom: null,
     done: new Set(),
   };
   try { JSON.parse(localStorage.getItem('archimate-done') || '[]').forEach(id => state.done.add(id)); } catch {}
@@ -231,6 +239,7 @@
     nodes.forEach(n => {
       n.el.classList.toggle('selected', n.id === state.selected);
       n.el.classList.toggle('focus', state.focus.has(n.id));
+      n.el.classList.toggle('link-source', n.id === state.linkFrom);
       n.el.classList.toggle('deployed', state.deployed && n.type !== 'users');
     });
     nodesEl.classList.toggle('dim', state.focus.size > 0);
@@ -316,7 +325,7 @@
   // ---------- Pointer: pan / drag / select ----------
   let drag = null;
   canvas.addEventListener('pointerdown', e => {
-    if (e.target.closest('.topbar, .zoom, .chat, .chat-fab')) return;
+    if (e.target.closest('.topbar, .custom-tools, .zoom, .chat, .chat-fab')) return;
     canvas.classList.remove('view-anim');
     const nodeEl = e.target.closest('.node');
     if (nodeEl) {
@@ -345,8 +354,10 @@
   canvas.addEventListener('pointerup', () => {
     if (!drag) return;
     canvas.classList.remove('panning');
-    if (!drag.moved) selectNode(drag.kind === 'node' ? drag.n.id : null);
-    else if (drag.kind === 'node' && state.edit) renderNodes();
+    if (!drag.moved) {
+      if (drag.kind === 'node' && state.link) linkClick(drag.n.id);
+      else { if (state.linkFrom) { state.linkFrom = null; paintHighlight(); } selectNode(drag.kind === 'node' ? drag.n.id : null); }
+    } else if (drag.kind === 'node' && state.edit) { renderNodes(); syncCustom(); }
     drag = null;
   });
   canvas.addEventListener('wheel', e => {
@@ -402,7 +413,12 @@
   function renderGuide() {
     renderTabs();
     const tab = GUIDE.find(t => t.key === state.tab);
-    if (!tab) { panelBody.innerHTML = '<div class="empty"><h4>설정 가이드가 아직 없어요</h4>3안을 만들면 선택한 안의 설정 순서가 여기에 나와요.</div>'; return; }
+    if (!tab) {
+      panelBody.innerHTML = isCustom
+        ? '<div class="empty"><h4>직접 구성한 캔버스예요</h4>설정 가이드와 월 비용은 3안에서만 보여 드려요.<br>구성한 뒤 3안 비교에서 비슷한 안을 골라 보세요.</div>'
+        : '<div class="empty"><h4>설정 가이드가 아직 없어요</h4>3안을 만들면 선택한 안의 설정 순서가 여기에 나와요.</div>';
+      return;
+    }
     const isLast = GUIDE[GUIDE.length - 1].key === tab.key;
     const lists = isLast && checklists.length ? `<div class="checklists">${checklists.map(c => `<section><h5>${esc(c.title)}</h5><ul>${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></section>`).join('')}</div>` : '';
     panelBody.innerHTML = `<p class="tab-intro">${tab.intro}</p>` + tab.steps.map((s, i) => {
@@ -467,6 +483,7 @@
 
   function greet() {
     log.innerHTML = ''; viewing = 'live';
+    if (isCustom) { addMsg('ai', '직접 구성하는 캔버스예요. 설정 가이드와 월 비용은 3안에서 볼 수 있어요.'); return; }
     if (!current) { addMsg('ai', '아직 만들어진 안이 없어요. 상단 바에서 다시 시도해 주세요.'); return; }
     addMsg('ai', `안녕하세요! 지금 보는 안은 서비스 ${nodes.length}개, 설정 단계 ${allSteps.length}개로 구성돼 있어요.\n오른쪽 가이드를 따라가다 막히면 물어보세요. 캔버스에서 서비스를 클릭하면 그 서비스 기준으로 답해 드립니다.\n\n먼저 시작할 단계: ${ref(nextStep()?.id)}`);
   }
@@ -475,6 +492,7 @@
   function reply(q) {
     const lc = q.toLowerCase();
     const sel = state.selected && byId[state.selected];
+    if (isCustom) return `직접 구성한 캔버스예요. 서비스 ${nodes.length}개, 연결 ${edges.length}개예요.\n설정 가이드와 월 비용은 3안에서 볼 수 있어요. 상단 바의 "3안 비교"를 눌러 보세요.`;
     if (!current) return '아직 만들어진 안이 없어요. 상단 바에서 3안을 다시 만들어 주세요.';
 
     if (/비용|가격|cost|price|요금/.test(lc)) {
@@ -651,14 +669,15 @@
 
   // ---------- Top bar ----------
   const modeBtn = $('#modeToggle');
-  function toggleEdit() {
-    state.edit = !state.edit;
-    canvas.classList.toggle('edit', state.edit);
-    modeBtn.classList.toggle('pill-warn', !state.edit);
-    modeBtn.classList.toggle('pill-edit', state.edit);
-    modeBtn.querySelector('span').textContent = state.edit ? 'Editing' : 'View only';
-    toast(state.edit ? 'Edit mode — 서비스를 드래그해 이동' : 'View only');
+  function setEdit(on, quiet) {
+    state.edit = on;
+    canvas.classList.toggle('edit', on);
+    modeBtn.classList.toggle('pill-warn', !on);
+    modeBtn.classList.toggle('pill-edit', on);
+    modeBtn.querySelector('span').textContent = on ? 'Editing' : 'View only';
+    if (!quiet) toast(on ? 'Edit mode — 서비스를 드래그해 이동' : 'View only');
   }
+  const toggleEdit = () => setEdit(!state.edit);
   modeBtn.onclick = toggleEdit;
 
   // ---------- 3안 선택 · 비교 · 실패 처리 ----------
@@ -672,6 +691,8 @@
   const costLine = d => d.monthlyCost ? `월 ${fmtKRW(d.monthlyCost.total)}` : '비용 계산 불가';
 
   function renderTierMenu() {
+    const cn = custom.nodes.length;
+    const customRows = `<div class="menu-sep"></div>${cn ? `<button class="tier-item custom${isCustom ? ' current' : ''}" data-custom="open"><span class="tier-name">내 캔버스${isCustom ? '<i class="tier-check">✓</i>' : ''}</span><span class="tier-title">직접 구성 · 서비스 ${cn}개 · 연결 ${custom.edges.length}개</span></button>` : ''}<button class="tier-item new" data-custom="new"><span class="tier-name">＋ 새 캔버스 만들기</span><span class="tier-title">빈 캔버스에서 서비스를 직접 추가하고 연결해요</span></button>`;
     menu.innerHTML = tierEntries().map(e => {
       if (e.failed) return `<button class="tier-item failed" data-tier="${e.tier}"><span class="tier-name">${TIER_LABEL[e.tier]}</span><span class="tier-fail">⚠ 만들지 못했어요 · 눌러서 다시 시도</span></button>`;
       const d = e.design, cur = current && current.id === d.id;
@@ -680,10 +701,17 @@
         <span class="tier-title">${esc(d.title)}</span>
         <span class="tier-meta"><b>${costLine(d)}</b><span class="${diffClass(d)}">난이도 ${esc(d.difficulty.label)}</span>${d.monthlyCost?.overBudget ? '<span class="meta-pill over">예산 초과</span>' : ''}</span>
       </button>`;
-    }).join('');
+    }).join('') + customRows;
   }
 
   function updateTierUI() {
+    if (isCustom) {
+      $('#stackName').textContent = '내 캔버스';
+      $('#guideSub').textContent = `직접 구성 · 서비스 ${nodes.length}개 · 연결 ${edges.length}개`;
+      $('#tierMeta').innerHTML = '';
+      renderTierMenu();
+      return;
+    }
     $('#stackName').textContent = current ? TIER_LABEL[current.tier] : '안 없음';
     $('#guideSub').textContent = current ? `${current.title} · ap-northeast-2` : '3안을 만들지 못했어요';
     $('#tierMeta').innerHTML = current ? [
@@ -696,6 +724,7 @@
   }
 
   function showDesign(d, { announce = true } = {}) {
+    if (isCustom) leaveCustom();
     state.selected = null; state.focus = new Set(); state.openStep = null; state.homeView = null; state.deployed = false;
     loadDesign(d);
     state.tab = GUIDE[0]?.key || null;
@@ -707,6 +736,14 @@
 
   tierBtn.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
   menu.onclick = e => {
+    const c = e.target.closest('[data-custom]');
+    if (c) {
+      menu.hidden = true;
+      if (c.dataset.custom === 'open') { if (!isCustom) openCustom(); }
+      else if (custom.nodes.length) resetModal.hidden = false;
+      else openCustom(true);
+      return;
+    }
     const b = e.target.closest('[data-tier]'); if (!b) return;
     menu.hidden = true;
     const en = tierEntries().find(x => x.tier === b.dataset.tier);
@@ -776,6 +813,102 @@
     }, 1400);
   };
   failModal.onclick = e => { if ((e.target === failModal || e.target.closest('[data-close]')) && !failRetry.disabled) failModal.hidden = true; };
+
+  // ---------- 새 캔버스 (직접 구성, 프로토타입 전용) ----------
+  // 빈 캔버스에서 서비스를 직접 추가·연결한다. 백엔드 계약에 없는 기능이라 브라우저(localStorage)에만 저장하고, 하나만 유지한다.
+  const CUSTOM_KEY = 'archimate-custom-canvas';
+  const custom = { nodes: [], edges: [], seq: 0 };
+  try { Object.assign(custom, JSON.parse(localStorage.getItem(CUSTOM_KEY) || '{}')); } catch {}
+  const tools = $('#customTools'), palette = $('#svcPalette'), hint = $('#canvasHint'), linkBtn = $('#linkBtn');
+
+  // 지금 캔버스 내용을 저장하고 화면의 개수 표시를 갱신한다.
+  function syncCustom() {
+    if (!isCustom) return;
+    custom.nodes = nodes.map(({ id, type, label, x, y }) => ({ id, type, label, x, y }));
+    custom.edges = edges.map(([a, b]) => [a, b]);
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom)); } catch {}
+    hint.hidden = nodes.length > 0;
+    updateTierUI();
+  }
+
+  function openCustom(fresh = false) {
+    if (fresh) { custom.nodes = []; custom.edges = []; custom.seq = 0; }
+    isCustom = true; current = null;
+    state.selected = null; state.focus = new Set(); state.openStep = null; state.homeView = null; state.deployed = false; state.tab = null;
+    nodes = custom.nodes.map(n => ({ ...n })); byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+    edges = custom.edges.map(([a, b]) => [a, b, '']); groups = []; GUIDE = []; allSteps = []; checklists = [];
+    $('#deployStatus').textContent = '배포 전'; $('#deployStatus').className = 'pill';
+    $('#chatCtx').textContent = '컨텍스트: 전체 스택';
+    tools.hidden = false; palette.hidden = true; setEdit(true, true);
+    renderNodes(); setLink(false, true); renderGuide();
+    if (nodes.length) fit(); else { state.scale = 1; state.tx = 0; state.ty = 0; applyView(); }
+    syncCustom();
+    if (viewing === 'live') addMsg('ai', nodes.length ? `<b>내 캔버스</b>로 바꿨어요. 서비스 ${nodes.length}개, 연결 ${edges.length}개예요.` : '새 캔버스를 만들었어요. 위쪽의 "서비스 추가"로 시작해 보세요.');
+  }
+  function leaveCustom() {
+    isCustom = false; tools.hidden = true; palette.hidden = true; hint.hidden = true; state.link = false; state.linkFrom = null; canvas.classList.remove('linking'); linkBtn.classList.remove('on'); setEdit(false, true);
+  }
+
+  // --- 서비스 추가: 화면에 보이는 영역의 가운데에 놓는다 ---
+  palette.innerHTML = Object.keys(TYPES).map(k => `<button data-svc="${k}" style="--c:${CAT[TYPES[k].cat].c}"><span class="tile">${svg(TYPES[k].icon)}</span><b>${KO[k]}</b><small>${TYPES[k].name}</small></button>`).join('');
+  $('#addSvcBtn').onclick = () => { palette.hidden = !palette.hidden; };
+  palette.onclick = e => { const b = e.target.closest('[data-svc]'); if (b) addService(b.dataset.svc); };
+  document.addEventListener('click', e => { if (!e.target.closest('#svcPalette, #addSvcBtn')) palette.hidden = true; });
+  function addService(type) {
+    const { left, top, w, h } = visibleBox();
+    const id = `n${++custom.seq}`;
+    const cx = (left + w / 2 - state.tx) / state.scale - NW / 2, cy = (top + h / 2 - state.ty) / state.scale - NH / 2;
+    // 화면 가운데에서 시작해 다른 서비스와 겹치지 않는 가장 가까운 빈자리를 찾는다
+    const free = (x, y) => nodes.every(m => Math.abs(m.x - x) > NW + 20 || Math.abs(m.y - y) > NH + 20);
+    let pos = { x: cx, y: cy };
+    search: for (let r = 0; r < 8; r++) {
+      for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const x = cx + dx * (NW + 36), y = cy + dy * (NH + 36);
+        if (free(x, y)) { pos = { x, y }; break search; }
+      }
+    }
+    const n = { id, type, label: KO[type], x: Math.round(pos.x / 8) * 8, y: Math.round(pos.y / 8) * 8 };
+    nodes.push(n); byId[id] = n;
+    renderNodes(); selectNode(id); syncCustom();
+  }
+
+  // --- 연결: 출발 서비스, 도착 서비스를 차례로 누른다. 이미 연결된 두 서비스를 다시 이으면 끊는다 ---
+  function setLink(on, quiet) {
+    state.link = on; state.linkFrom = null;
+    canvas.classList.toggle('linking', on); linkBtn.classList.toggle('on', on); linkBtn.setAttribute('aria-pressed', String(on));
+    paintHighlight();
+    if (on && !quiet) toast('출발 서비스를 누른 뒤 도착 서비스를 눌러 주세요');
+  }
+  linkBtn.onclick = () => setLink(!state.link);
+  function linkClick(id) {
+    if (!state.linkFrom) { state.linkFrom = id; paintHighlight(); toast('이제 도착 서비스를 눌러 주세요'); return; }
+    const a = state.linkFrom, b = id;
+    state.linkFrom = null;
+    if (a !== b) {
+      const i = edges.findIndex(e => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a));
+      if (i >= 0) { edges.splice(i, 1); toast('연결을 끊었어요'); } else { edges.push([a, b, '']); toast('연결했어요'); }
+      syncCustom();
+    }
+    paintHighlight();
+  }
+
+  // --- 삭제 ---
+  function deleteSelected() {
+    const id = state.selected; if (!id || !byId[id]) return;
+    nodes.splice(nodes.findIndex(n => n.id === id), 1); delete byId[id];
+    edges = edges.filter(([a, b]) => a !== id && b !== id);
+    state.selected = null; renderNodes(); renderGuide(); syncCustom();
+    toast('서비스를 지웠어요');
+  }
+  $('#delBtn').onclick = () => (state.selected ? deleteSelected() : toast('지울 서비스를 먼저 눌러 선택하세요'));
+
+  // --- 새 캔버스 만들기 확인 ---
+  const resetModal = $('#resetModal');
+  $('#resetCancel').onclick = () => { resetModal.hidden = true; };
+  resetModal.onclick = e => { if (e.target === resetModal) resetModal.hidden = true; };
+  $('#resetOk').onclick = () => { resetModal.hidden = true; openCustom(true); toast('새 캔버스를 만들었어요'); };
+
   document.addEventListener('click', () => { menu.hidden = true; });
   $('#bellBtn').onclick = () => { $('#bellDot').hidden = true; toast(state.deployed ? 'Deployment completed successfully' : 'No new notifications'); };
 
@@ -821,14 +954,8 @@
     else if (e.key === '0') fit();
     else if (e.key.toLowerCase() === 'e') toggleEdit();
     else if (e.key === '/') { e.preventDefault(); showChat(); input.focus(); }
-    else if (e.key === 'Escape') { selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; cmpModal.hidden = true; if (!failRetry.disabled) failModal.hidden = true; closeHistory(); }
-    else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && state.selected) {
-      const id = state.selected;
-      nodes.splice(nodes.findIndex(n => n.id === id), 1); delete byId[id];
-      edges = edges.filter(([a, b]) => a !== id && b !== id);
-      state.selected = null; renderNodes(); renderGuide();
-      toast(`Deleted ${id}`);
-    }
+    else if (e.key === 'Escape') { if (state.linkFrom) { state.linkFrom = null; paintHighlight(); } palette.hidden = true; resetModal.hidden = true; selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; cmpModal.hidden = true; if (!failRetry.disabled) failModal.hidden = true; closeHistory(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && state.selected) deleteSelected();
   });
 
   // ---------- Toast ----------

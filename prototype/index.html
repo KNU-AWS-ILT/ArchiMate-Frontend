@@ -37,6 +37,19 @@
         </button>
       </div>
 
+      <!-- 새 캔버스(직접 구성) 도구 -->
+      <div class="custom-tools" id="customTools" hidden>
+        <button class="pill pill-btn" id="addSvcBtn">＋ 서비스 추가</button>
+        <button class="pill pill-btn" id="linkBtn" aria-pressed="false" title="출발 서비스, 도착 서비스를 차례로 누르면 연결돼요. 이미 연결된 두 서비스를 다시 이으면 끊어져요.">연결</button>
+        <button class="pill pill-btn" id="delBtn" title="선택한 서비스 삭제 (Delete 키)">삭제</button>
+        <div class="svc-palette" id="svcPalette" hidden></div>
+      </div>
+      <div class="canvas-hint" id="canvasHint" hidden>
+        <b>새 캔버스</b>
+        <span>위쪽의 "서비스 추가"를 눌러 시작하세요.</span>
+        <span>서비스를 끌어서 옮기고, "연결"로 선을 이을 수 있어요.</span>
+      </div>
+
       <!-- ===== AI chat (non-modal, floating) ===== -->
       <section class="chat" id="chat" aria-label="AI assistant">
         <header class="chat-head" id="chatHead">
@@ -166,6 +179,18 @@
       <div class="modal-actions">
         <button class="btn" data-close>닫기</button>
         <button class="btn btn-primary" id="failRetry">다시 시도</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 새 캔버스 만들기 확인 -->
+  <div class="modal" id="resetModal" hidden>
+    <div class="modal-card confirm" role="alertdialog" aria-labelledby="resetTitle">
+      <h3 id="resetTitle">지금 구성을 지우고 새로 시작할까요?</h3>
+      <p>직접 구성한 서비스와 연결이 모두 지워지고, 되돌릴 수 없어요.</p>
+      <div class="modal-actions">
+        <button class="btn" id="resetCancel">취소</button>
+        <button class="btn btn-danger" id="resetOk">지우고 시작</button>
       </div>
     </div>
   </div>
