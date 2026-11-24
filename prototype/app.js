@@ -21,166 +21,136 @@
     lambda: '<path d="M6 21l6-11M9 3h3l7 18"/>',
     bucket: '<path d="M4 6l2 14h12l2-14"/><ellipse cx="12" cy="6" rx="8" ry="2.5"/>',
     queue: '<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M8 7v10M12 7v10M16 7v10"/>',
-    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
     id: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-1.5 1.7-2 3-2s2.5.5 3 2M14 10h4M14 13h3"/>',
     api: '<path d="M8 4H5v16h3M16 4h3v16h-3M10 12h4"/>',
     db: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
     bell: '<path d="M4 12h3l5-6v12l-5-6M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
-    film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     bus: '<path d="M4 12h16M12 4v16"/><circle cx="12" cy="12" r="3"/><circle cx="4" cy="12" r="1.5"/><circle cx="20" cy="12" r="1.5"/>',
-    eye: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
     key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',
-    lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
     chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
-    trail: '<path d="M4 18c4 0 4-12 8-12s4 12 8 12"/>',
     cdn: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/>',
     dns: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+    server: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+    lb: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v5M12 12L5 17M12 12v5M12 12l7 5"/>',
+    container: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    nat: '<path d="M4 8h12M12 4l4 4-4 4M20 16H8M12 12l-4 4 4 4"/>',
+    cache: '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    spark: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
   };
 
+  // 백엔드 계약의 serviceType 21종 (docs/frontend-api-list/B-designs.md)
   const TYPES = {
-    users:        { name: 'Users', cat: 'general', icon: 'users', tf: null, cost: 0, role: '서비스를 사용하는 최종 사용자(브라우저/모바일)입니다.' },
-    route53:      { name: 'Amazon Route 53', cat: 'networking', icon: 'dns', tf: 'aws_route53_zone', cost: 0.5, role: '도메인 DNS를 관리하고 CloudFront로 트래픽을 라우팅합니다.' },
-    cloudfront:   { name: 'Amazon CloudFront', cat: 'networking', icon: 'cdn', tf: 'aws_cloudfront_distribution', cost: 8.5, role: '정적 웹(S3)을 전 세계 엣지에서 캐싱해 제공하는 CDN입니다.' },
-    s3:           { name: 'Amazon S3', cat: 'storage', icon: 'bucket', tf: 'aws_s3_bucket', cost: 2.3, role: '정적 웹 / 업로드 원본 / 변환 결과물을 저장하는 객체 스토리지입니다.' },
-    cognito:      { name: 'Amazon Cognito', cat: 'security', icon: 'id', tf: 'aws_cognito_user_pool', cost: 5.5, role: '회원가입·로그인을 처리하고 API Gateway에 JWT를 제공합니다.' },
-    waf:          { name: 'AWS WAF', cat: 'security', icon: 'shield', tf: 'aws_wafv2_web_acl', cost: 6, role: 'CloudFront 앞단에서 악성 요청과 과도한 트래픽을 차단합니다.' },
-    lambda:       { name: 'AWS Lambda', cat: 'compute', icon: 'lambda', tf: 'aws_lambda_function', cost: 1.8, role: '이벤트 기반으로 비즈니스 로직을 실행하는 서버리스 함수입니다.' },
-    apigw:        { name: 'Amazon API Gateway', cat: 'networking', icon: 'api', tf: 'aws_apigatewayv2_api', cost: 3.5, role: 'REST/HTTP API 진입점이며 Cognito 인증 후 Lambda를 호출합니다.' },
-    dynamodb:     { name: 'Amazon DynamoDB', cat: 'database', icon: 'db', tf: 'aws_dynamodb_table', cost: 6.25, role: '메타데이터와 작업 상태를 저장하는 NoSQL DB입니다.' },
-    sns:          { name: 'Amazon SNS', cat: 'messaging', icon: 'bell', tf: 'aws_sns_topic', cost: 0.5, role: '업로드 이벤트를 여러 SQS 큐로 팬아웃합니다.' },
-    sqs:          { name: 'Amazon SQS', cat: 'messaging', icon: 'queue', tf: 'aws_sqs_queue', cost: 0.4, role: '작업을 버퍼링해 워커 Lambda가 안정적으로 처리하게 합니다.' },
-    mediaconvert: { name: 'AWS Elemental MediaConvert', cat: 'media', icon: 'film', tf: 'aws_media_convert_queue', cost: 22, role: '업로드된 영상을 HLS/MP4 등으로 트랜스코딩합니다.' },
-    eventbridge:  { name: 'Amazon EventBridge', cat: 'messaging', icon: 'bus', tf: 'aws_cloudwatch_event_rule', cost: 1, role: 'MediaConvert 작업 완료 이벤트를 후처리 Lambda로 전달합니다.' },
-    rekognition:  { name: 'Amazon Rekognition', cat: 'ml', icon: 'eye', tf: null, cost: 12, role: '이미지/영상에서 라벨·얼굴·부적절 콘텐츠를 분석합니다.' },
-    iam:          { name: 'AWS IAM', cat: 'security', icon: 'key', tf: 'aws_iam_role', cost: 0, role: '모든 서비스 간 접근 권한(역할/정책)을 정의합니다.' },
-    kms:          { name: 'AWS KMS', cat: 'security', icon: 'lock', tf: 'aws_kms_key', cost: 1, role: 'S3·SQS·DynamoDB 데이터 암호화 키를 관리합니다.' },
-    cloudwatch:   { name: 'Amazon CloudWatch', cat: 'mgmt', icon: 'chart', tf: 'aws_cloudwatch_log_group', cost: 3, role: '로그·지표·알람으로 시스템을 모니터링합니다.' },
-    cloudtrail:   { name: 'AWS CloudTrail', cat: 'mgmt', icon: 'trail', tf: 'aws_cloudtrail', cost: 2, role: '계정 내 모든 API 호출을 감사 로그로 기록합니다.' },
+    users:           { name: 'Users', cat: 'general', icon: 'users', role: '서비스를 사용하는 최종 사용자입니다.' },
+    lambda:          { name: 'AWS Lambda', cat: 'compute', icon: 'lambda', role: '이벤트가 있을 때만 실행되는 서버리스 함수입니다.' },
+    ec2:             { name: 'Amazon EC2', cat: 'compute', icon: 'server', role: '직접 관리하는 가상 서버입니다.' },
+    ecs_fargate:     { name: 'Amazon ECS Fargate', cat: 'compute', icon: 'container', role: '서버 관리 없이 컨테이너를 실행합니다.' },
+    s3:              { name: 'Amazon S3', cat: 'storage', icon: 'bucket', role: '파일과 정적 웹 화면을 저장하는 객체 스토리지입니다.' },
+    dynamodb:        { name: 'Amazon DynamoDB', cat: 'database', icon: 'db', role: '키로 빠르게 읽고 쓰는 NoSQL 데이터베이스입니다.' },
+    rds:             { name: 'Amazon RDS', cat: 'database', icon: 'db', role: 'SQL을 쓰는 관리형 관계형 데이터베이스입니다.' },
+    elasticache:     { name: 'Amazon ElastiCache', cat: 'database', icon: 'cache', role: '자주 읽는 데이터를 메모리에 두는 캐시입니다.' },
+    cloudfront:      { name: 'Amazon CloudFront', cat: 'networking', icon: 'cdn', role: '정적 파일을 전 세계 엣지에서 빠르게 전달하는 CDN입니다.' },
+    api_gateway:     { name: 'Amazon API Gateway', cat: 'networking', icon: 'api', role: 'API 요청을 받아 백엔드로 전달하는 입구입니다.' },
+    alb:             { name: 'Application Load Balancer', cat: 'networking', icon: 'lb', role: '요청을 여러 서버나 컨테이너로 나눠 줍니다.' },
+    nat_gateway:     { name: 'NAT Gateway', cat: 'networking', icon: 'nat', role: '프라이빗 서브넷에서 인터넷으로 나가는 통로입니다.' },
+    route53:         { name: 'Amazon Route 53', cat: 'networking', icon: 'dns', role: '도메인 DNS를 관리합니다.' },
+    cognito:         { name: 'Amazon Cognito', cat: 'security', icon: 'id', role: '회원가입과 로그인을 처리합니다.' },
+    secrets_manager: { name: 'AWS Secrets Manager', cat: 'security', icon: 'key', role: '비밀번호와 API 키를 안전하게 보관합니다.' },
+    sqs:             { name: 'Amazon SQS', cat: 'messaging', icon: 'queue', role: '작업을 줄 세워 안정적으로 처리하게 합니다.' },
+    sns:             { name: 'Amazon SNS', cat: 'messaging', icon: 'bell', role: '알림과 이벤트를 여러 곳에 전달합니다.' },
+    eventbridge:     { name: 'Amazon EventBridge', cat: 'messaging', icon: 'bus', role: '이벤트를 규칙에 따라 다른 서비스로 보냅니다.' },
+    ses:             { name: 'Amazon SES', cat: 'messaging', icon: 'mail', role: '이메일을 보냅니다.' },
+    cloudwatch:      { name: 'Amazon CloudWatch', cat: 'mgmt', icon: 'chart', role: '로그, 지표, 알람으로 서비스 상태를 지켜봅니다.' },
+    bedrock:         { name: 'Amazon Bedrock', cat: 'ml', icon: 'spark', role: '생성형 AI 모델을 API로 사용합니다.' },
   };
 
-  // ---------- Diagram data ----------
-  const S = 1.45;
-  const raw = [
-    ['users', 'users', 235, 190],
-    ['r53', 'route53', 390, 80], ['cf', 'cloudfront', 467, 90], ['s3web', 's3', 563, 90],
-    ['cog', 'cognito', 386, 158], ['waf', 'waf', 467, 158],
-    ['s3up', 's3', 678, 228],
-    ['fnApi', 'lambda', 430, 280], ['api', 'apigw', 309, 327], ['ddb', 'dynamodb', 532, 330], ['fnAuth', 'lambda', 427, 380],
-    ['sns', 'sns', 770, 322],
-    ['q1', 'sqs', 859, 207], ['q2', 'sqs', 857, 285], ['q3', 'sqs', 861, 358], ['q4', 'sqs', 861, 440], ['q5', 'sqs', 862, 510],
-    ['fn1', 'lambda', 983, 202], ['fn2', 'lambda', 986, 282], ['fn3', 'lambda', 985, 362], ['fn4', 'lambda', 993, 436], ['fn5', 'lambda', 990, 513],
-    ['mc', 'mediaconvert', 1088, 362], ['eb', 'eventbridge', 1188, 427], ['rek', 'rekognition', 1084, 513],
-    ['s3out', 's3', 1281, 333],
-    ['iam', 'iam', 342, 720], ['kms', 'kms', 437, 720], ['cw', 'cloudwatch', 541, 718], ['ct', 'cloudtrail', 635, 720],
-  ];
-  const nodes = raw.map(([id, type, x, y]) => ({ id, type, x: x * S, y: y * S }));
-  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  // ---------- 3안 (백엔드 DesignJob) ----------
+  const TIER_ORDER = ['minimal_cost', 'balanced', 'scalable'];
+  const TIER_LABEL = { minimal_cost: '최소비용형', balanced: '균형형', scalable: '확장형' };
+  // 프론트는 서버 message를 그대로 보여 주지 않고 code별 문구로 바꾼다. (coding-conventions 8번)
+  const ERROR_TEXT = {
+    DESIGN_GENERATION_FAILED: '구성도를 만들지 못했어요. 잠시 후 다시 시도해 주세요.',
+    LLM_TIMEOUT: '생성이 오래 걸려서 멈췄어요. 다시 시도해 주세요.',
+    RATE_LIMITED: '요청이 많아요. 잠시 후 다시 시도해 주세요.',
+    INTERNAL_ERROR: '서버에 문제가 생겼어요. 잠시 후 다시 시도해 주세요.',
+  };
+  // ?state=partial-failed | failed 로 실패 화면을 확인한다. (기본: 3안 모두 성공)
+  const MOCK_STATE = new URLSearchParams(location.search).get('state');
+  let job = structuredClone(MOCK_STATE === 'failed' ? MOCK.failed : MOCK_STATE === 'partial-failed' ? MOCK.partialFailed : MOCK.completed);
+  const fmtKRW = n => `${Number(n).toLocaleString('ko-KR')}원`;
 
-  let edges = [
-    ['users', 'r53'], ['r53', 'cf'], ['cf', 's3web'], ['waf', 'cf'], ['users', 'cog'],
-    ['users', 'api'], ['cog', 'api'], ['api', 'fnApi'], ['api', 'fnAuth'],
-    ['fnApi', 'ddb'], ['fnAuth', 'ddb'], ['fnApi', 's3up'], ['s3up', 'sns'], ['fnApi', 'sns'],
-    ['sns', 'q1'], ['sns', 'q2'], ['sns', 'q3'], ['sns', 'q4'], ['sns', 'q5'],
-    ['q1', 'fn1'], ['q2', 'fn2'], ['q3', 'fn3'], ['q4', 'fn4'], ['q5', 'fn5'],
-    ['fn2', 'mc'], ['fn3', 'mc'], ['mc', 's3out'], ['mc', 'eb'], ['eb', 'fn4'],
-    ['fn5', 'rek'], ['rek', 'q5'], ['fn1', 's3out'], ['fn3', 'ddb'],
-  ];
-  const groups = [{ label: 'Security & Observability', ids: ['iam', 'kms', 'cw', 'ct'] }];
-  const NW = 74, NH = 58;
+  const NW = 96, NH = 76;
+  let nodes = [], byId = {}, edges = [], groups = [], GUIDE = [], allSteps = [], checklists = [], current = null;
 
-  // ---------- Setup guide (procedures per phase) ----------
-  const GUIDE = [
-    {
-      key: 'net', title: '네트워크·보안', sub: '1단계',
-      intro: '다른 리소스가 참조하는 권한·암호화·도메인·인증을 먼저 준비합니다. 이 단계가 끝나야 나머지 리소스에 ARN을 연결할 수 있습니다.',
-      steps: [
-        { id: 'iam', title: 'IAM 역할 & KMS 키 준비', desc: '배포용·실행용 역할과 데이터 암호화 키를 만듭니다.', nodes: ['iam', 'kms'],
-          todo: ['배포 파이프라인용 IAM 역할 생성 (최소 권한)', 'Lambda 실행 역할을 함수 그룹별로 분리', 'KMS 고객 관리형 키(CMK) 생성 후 별칭 alias/archimate-data 지정', '키 정책에 Lambda·S3·SQS 서비스 사용 권한 추가'],
-          cli: 'aws kms create-key --description "archimate-data"\naws kms create-alias --alias-name alias/archimate-data \\\n  --target-key-id <KEY_ID>\naws iam create-role --role-name archimate-lambda-exec \\\n  --assume-role-policy-document file://trust-lambda.json' },
-        { id: 'r53', title: 'Route 53 호스팅 영역 생성', desc: '서비스 도메인의 DNS 영역을 만들고 네임서버를 등록합니다.', nodes: ['r53', 'users'],
-          todo: ['퍼블릭 호스팅 영역 생성', '도메인 등록 기관에 NS 레코드 4개 등록', 'dig로 NS 전파 확인'],
-          cli: 'aws route53 create-hosted-zone --name example.com \\\n  --caller-reference $(date +%s)' },
-        { id: 'acm', title: 'ACM 인증서 발급', desc: 'CloudFront에서 사용할 TLS 인증서를 DNS 검증으로 발급합니다.', nodes: ['cf', 'r53'],
-          warn: 'CloudFront용 인증서는 반드시 us-east-1 리전에서 발급해야 합니다.',
-          todo: ['us-east-1에서 인증서 요청 (example.com, *.example.com)', 'Route 53에 CNAME 검증 레코드 자동 생성', '상태가 ISSUED가 될 때까지 대기'],
-          cli: 'aws acm request-certificate --domain-name example.com \\\n  --subject-alternative-names "*.example.com" \\\n  --validation-method DNS --region us-east-1' },
-        { id: 'waf', title: 'WAF Web ACL 구성', desc: 'CloudFront에 붙일 관리형 규칙과 요청 수 제한 규칙을 설정합니다.', nodes: ['waf', 'cf'],
-          todo: ['Scope=CLOUDFRONT로 Web ACL 생성 (us-east-1)', 'AWSManagedRulesCommonRuleSet 추가', 'IP당 5분 2,000건 Rate-based 규칙 추가', 'CloudWatch 지표·샘플링 활성화'],
-          cli: 'aws wafv2 create-web-acl --name archimate-acl \\\n  --scope CLOUDFRONT --region us-east-1 \\\n  --default-action Allow={} \\\n  --rules file://waf-rules.json \\\n  --visibility-config SampledRequestsEnabled=true,\\\nCloudWatchMetricsEnabled=true,MetricName=archimate-acl' },
-        { id: 'cog', title: 'Cognito User Pool 구성', desc: '사용자 가입·로그인과 JWT 발급을 설정합니다.', nodes: ['cog', 'users'],
-          todo: ['User Pool 생성 (이메일 로그인, MFA 선택)', '앱 클라이언트 생성 (Client secret 없음, SPA용)', '호스팅 UI 도메인과 콜백 URL 설정'],
-          cli: 'aws cognito-idp create-user-pool --pool-name archimate-users \\\n  --auto-verified-attributes email\naws cognito-idp create-user-pool-client \\\n  --user-pool-id <POOL_ID> --client-name web' },
-      ],
-    },
-    {
-      key: 'data', title: '스토리지·DB', sub: '2단계',
-      intro: '정적 웹, 업로드 원본, 변환 결과물용 버킷과 메타데이터 테이블을 만들고 CloudFront로 웹을 공개합니다.',
-      steps: [
-        { id: 's3', title: 'S3 버킷 3개 생성', desc: 'web / upload / output 버킷을 용도별로 분리합니다.', nodes: ['s3web', 's3up', 's3out'],
-          todo: ['모든 버킷에 퍼블릭 액세스 차단', 'SSE-KMS(alias/archimate-data) 기본 암호화', 'upload 버킷: Presigned PUT용 CORS 설정', 'output 버킷: 90일 후 Glacier 수명 주기 규칙'],
-          cli: 'for b in web upload output; do\n  aws s3api create-bucket --bucket archimate-$b \\\n    --region ap-northeast-2 \\\n    --create-bucket-configuration LocationConstraint=ap-northeast-2\ndone' },
-        { id: 'cfd', title: 'CloudFront 배포 생성', desc: 'web 버킷을 OAC로 연결하고 WAF·인증서·도메인을 붙입니다.', nodes: ['cf', 's3web', 'waf', 'r53'],
-          todo: ['Origin Access Control(OAC) 생성 후 web 버킷 연결', '버킷 정책에 CloudFront 서비스 주체만 허용', '대체 도메인 + ACM 인증서 + WAF ACL 지정', 'Route 53에 A(Alias) 레코드 생성'],
-          cli: 'aws cloudfront create-distribution \\\n  --distribution-config file://cf-config.json' },
-        { id: 'ddb', title: 'DynamoDB 테이블 생성', desc: '미디어 메타데이터와 처리 상태를 저장합니다.', nodes: ['ddb'],
-          todo: ['파티션 키 id(String), 온디맨드 과금', '상태 조회용 GSI (status, createdAt)', 'Point-in-time recovery 활성화'],
-          cli: 'aws dynamodb create-table --table-name archimate-media \\\n  --attribute-definitions AttributeName=id,AttributeType=S \\\n  --key-schema AttributeName=id,KeyType=HASH \\\n  --billing-mode PAY_PER_REQUEST' },
-      ],
-    },
-    {
-      key: 'compute', title: '컴퓨팅·메시징', sub: '3단계',
-      intro: 'API → Lambda → SNS/SQS 팬아웃 → 워커 Lambda → MediaConvert / Rekognition 순서로 이벤트 흐름을 연결합니다.',
-      steps: [
-        { id: 'api', title: 'API Gateway + Cognito 인증', desc: 'HTTP API를 만들고 JWT Authorizer로 보호합니다.', nodes: ['api', 'cog', 'users'],
-          todo: ['HTTP API 생성, CORS 허용 오리진 지정', 'JWT Authorizer: Issuer=Cognito, Audience=앱 클라이언트 ID', '라우트 POST /uploads, GET /media/{id} 생성', 'stage=dev, 자동 배포 활성화'],
-          cli: 'aws apigatewayv2 create-api --name archimate-api \\\n  --protocol-type HTTP\naws apigatewayv2 create-authorizer --api-id <API_ID> \\\n  --authorizer-type JWT --name cognito \\\n  --identity-source \'$request.header.Authorization\' \\\n  --jwt-configuration Audience=<CLIENT_ID>,Issuer=<ISSUER_URL>' },
-        { id: 'fnapi', title: 'API용 Lambda 배포', desc: '업로드 URL 발급·조회 함수를 배포하고 라우트에 연결합니다.', nodes: ['fnApi', 'fnAuth', 'ddb', 's3up', 'api'],
-          todo: ['환경변수 TABLE_NAME, UPLOAD_BUCKET 설정', 'fnApi: s3:PutObject(Presigned), dynamodb:PutItem 권한', 'fnAuth: dynamodb:GetItem/Query 권한', 'API 라우트 통합(Integration) 연결'],
-          cli: 'aws lambda create-function --function-name fnApi \\\n  --runtime nodejs20.x --handler index.handler \\\n  --role <EXEC_ROLE_ARN> --zip-file fileb://fnApi.zip \\\n  --environment "Variables={TABLE_NAME=archimate-media}"' },
-        { id: 'fanout', title: 'SNS → SQS 팬아웃 구성', desc: '토픽 1개와 큐 5개를 만들고 구독시킵니다.', nodes: ['sns', 'q1', 'q2', 'q3', 'q4', 'q5'],
-          todo: ['SNS 토픽 생성 (KMS 암호화)', 'SQS 큐 5개 + 각 큐별 DLQ(maxReceiveCount=5)', '큐 정책에 SNS 토픽 SendMessage 허용', '구독 생성 시 RawMessageDelivery=true'],
-          cli: 'aws sns create-topic --name archimate-upload\naws sqs create-queue --queue-name q1 \\\n  --attributes VisibilityTimeout=180\naws sns subscribe --topic-arn <TOPIC_ARN> \\\n  --protocol sqs --notification-endpoint <Q1_ARN> \\\n  --attributes RawMessageDelivery=true' },
-        { id: 's3evt', title: 'S3 업로드 이벤트 → SNS', desc: 'upload 버킷의 ObjectCreated 이벤트를 토픽으로 보냅니다.', nodes: ['s3up', 'sns'],
-          todo: ['SNS 토픽 정책에 s3.amazonaws.com Publish 허용', '버킷 알림: s3:ObjectCreated:* → 토픽', '테스트 파일 업로드로 메시지 수신 확인'],
-          cli: 'aws s3api put-bucket-notification-configuration \\\n  --bucket archimate-upload \\\n  --notification-configuration file://s3-notify.json' },
-        { id: 'workers', title: '워커 Lambda ↔ SQS 연결', desc: '큐마다 워커 함수를 이벤트 소스 매핑으로 연결합니다.', nodes: ['q1', 'q2', 'q3', 'q4', 'q5', 'fn1', 'fn2', 'fn3', 'fn4', 'fn5'],
-          warn: '큐의 VisibilityTimeout은 함수 Timeout의 6배 이상으로 설정하세요.',
-          todo: ['fn1~fn5 배포 (Timeout 30s, Memory 512MB~)', '이벤트 소스 매핑 batch-size=10, ReportBatchItemFailures', '최대 동시성으로 다운스트림 보호'],
-          cli: 'aws lambda create-event-source-mapping \\\n  --function-name fn1 --event-source-arn <Q1_ARN> \\\n  --batch-size 10 \\\n  --function-response-types ReportBatchItemFailures' },
-        { id: 'mc', title: 'MediaConvert 트랜스코딩', desc: '변환 작업 템플릿과 서비스 역할을 설정합니다.', nodes: ['mc', 'fn2', 'fn3', 's3out'],
-          todo: ['MediaConvert 서비스 역할 (upload 읽기 / output 쓰기)', '계정별 엔드포인트 조회 후 Lambda 환경변수에 저장', 'HLS + MP4 출력 Job Template 생성', 'fn2/fn3에 iam:PassRole, mediaconvert:CreateJob 권한'],
-          cli: 'aws mediaconvert describe-endpoints\naws mediaconvert create-job-template \\\n  --name archimate-hls --settings file://job-template.json' },
-        { id: 'eb', title: 'EventBridge 완료 이벤트 규칙', desc: '작업 완료(COMPLETE) 이벤트를 후처리 함수로 전달합니다.', nodes: ['eb', 'mc', 'fn4'],
-          todo: ['source=aws.mediaconvert, status=COMPLETE|ERROR 패턴', '대상: fn4 (DynamoDB 상태 업데이트)', 'Lambda 리소스 정책에 events.amazonaws.com 허용'],
-          cli: 'aws events put-rule --name mc-complete --event-pattern \\\n  \'{"source":["aws.mediaconvert"],\n    "detail":{"status":["COMPLETE","ERROR"]}}\'\naws events put-targets --rule mc-complete \\\n  --targets Id=fn4,Arn=<FN4_ARN>' },
-        { id: 'rek', title: 'Rekognition 분석 연결', desc: 'fn5가 이미지/영상 분석 결과를 큐로 돌려보내도록 설정합니다.', nodes: ['fn5', 'rek', 'q5'],
-          todo: ['fn5 역할에 rekognition:DetectLabels, DetectModerationLabels 권한', '영상 분석은 StartLabelDetection + SNS 완료 알림 사용', '결과를 DynamoDB에 저장'],
-          cli: 'aws rekognition detect-labels \\\n  --image "S3Object={Bucket=archimate-upload,Name=sample.jpg}"' },
-      ],
-    },
-    {
-      key: 'ops', title: '운영·배포', sub: '4단계',
-      intro: '모니터링과 감사 로그를 켠 뒤 스택을 배포하고 끝단까지 동작을 검증합니다.',
-      steps: [
-        { id: 'cw', title: 'CloudWatch 로그·알람', desc: '로그 보존 기간과 핵심 알람을 설정합니다.', nodes: ['cw', 'fn1', 'q1'],
-          todo: ['모든 Lambda 로그 그룹 보존 30일', 'DLQ ApproximateNumberOfMessagesVisible > 0 알람', 'Lambda Errors / Throttles 알람 → SNS 이메일', '서비스 대시보드 생성'],
-          cli: 'aws logs put-retention-policy \\\n  --log-group-name /aws/lambda/fn1 --retention-in-days 30' },
-        { id: 'ct', title: 'CloudTrail 감사 로그', desc: '모든 리전의 관리 이벤트를 기록합니다.', nodes: ['ct'],
-          todo: ['멀티 리전 Trail 생성', '로그 파일 무결성 검증 활성화', '전용 S3 버킷 + KMS 암호화'],
-          cli: 'aws cloudtrail create-trail --name archimate-trail \\\n  --s3-bucket-name archimate-audit --is-multi-region-trail \\\n  --enable-log-file-validation\naws cloudtrail start-logging --name archimate-trail' },
-        { id: 'deploy', title: '스택 배포 & 동작 검증', desc: 'Deploy 버튼으로 배포 후 업로드 → 변환 → 조회까지 확인합니다.', nodes: ['api', 'cf', 's3up', 'mc', 's3out'],
-          todo: ['우측 상단 Deploy 실행', '웹 도메인 접속 후 로그인 확인', '샘플 영상 업로드 → output 버킷에 HLS 생성 확인', 'GET /media/{id} 상태 COMPLETE 확인'],
-          cli: 'curl -H "Authorization: Bearer $TOKEN" \\\n  https://api.example.com/media/<ID>' },
-      ],
-    },
-  ];
-  const allSteps = GUIDE.flatMap(t => t.steps.map(s => ({ ...s, tab: t.key })));
+  // 좌표가 없는 구성도를 자동 배치한다. x: 사용자에서 시작하는 흐름 순서, y: 그룹(리전·VPC·서브넷)별 띠
+  function layoutArchitecture(arch) {
+    const XGAP = 190, YGAP = 110, LANE_GAP = 96;
+    const ns = arch.nodes, ids = ns.map(n => n.id);
+    const layer = Object.fromEntries(ids.map(id => [id, 0]));
+    for (let k = 0; k < ids.length; k++) {
+      let changed = false;
+      arch.edges.forEach(e => {
+        if (layer[e.from] + 1 < ids.length && layer[e.to] < layer[e.from] + 1) { layer[e.to] = layer[e.from] + 1; changed = true; }
+      });
+      if (!changed) break;
+    }
+    // 그룹을 트리 순서로 늘어놓아 띠(lane) 순서를 정한다. 소속 없는 노드가 맨 위다.
+    const order = [];
+    const walk = pid => (arch.groups || []).filter(g => (g.parentId || null) === pid).forEach(g => { order.push(g.id); walk(g.id); });
+    walk(null);
+    const lanes = ['__out', ...order];
+    const laneOf = n => (n.groupId && lanes.includes(n.groupId) ? n.groupId : '__out');
+    const pos = {};
+    let top = 0;
+    lanes.forEach(l => {
+      const members = ns.filter(n => laneOf(n) === l);
+      if (!members.length) return;
+      const byLayer = {};
+      members.forEach(n => (byLayer[layer[n.id]] ||= []).push(n));
+      const rows = Math.max(...Object.values(byLayer).map(a => a.length));
+      Object.entries(byLayer).forEach(([lv, arr]) => arr.forEach((n, i) => {
+        pos[n.id] = { x: Number(lv) * XGAP, y: top + ((rows - arr.length) / 2 + i) * YGAP };
+      }));
+      top += (rows - 1) * YGAP + NH + LANE_GAP;
+    });
+    return pos;
+  }
+
+  // 그룹 상자: 자기 노드와 하위 그룹 노드를 모두 감싼다. 안쪽 그룹일수록 여백이 작다.
+  function buildGroups(gs, ns) {
+    const kids = id => gs.filter(g => g.parentId === id);
+    const ids = g => [...ns.filter(n => n.groupId === g.id).map(n => n.id), ...kids(g.id).flatMap(ids)];
+    const height = g => { const k = kids(g.id).filter(c => ids(c).length); return k.length ? 1 + Math.max(...k.map(height)) : 0; };
+    const depth = g => (g.parentId ? 1 + depth(gs.find(x => x.id === g.parentId)) : 0);
+    return gs.map(g => ({ id: g.id, kind: g.kind, label: g.label, ids: ids(g), depth: depth(g), pad: 18 + 16 * height(g) }))
+      .filter(g => g.ids.length).sort((a, b) => a.depth - b.depth);
+  }
+
+  // 3안 중 하나를 캔버스와 설정 가이드에 올린다.
+  function loadDesign(d) {
+    current = d;
+    const arch = d.architecture, pos = layoutArchitecture(arch);
+    nodes = arch.nodes.map(n => ({ id: n.id, type: n.serviceType, label: n.label, role: n.role, reason: n.reason, groupId: n.groupId, x: pos[n.id].x, y: pos[n.id].y }));
+    byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+    edges = arch.edges.map(e => [e.from, e.to, e.label || '']);
+    groups = buildGroups(arch.groups || [], nodes);
+    // 완료 체크 키: guide:{designId}:{stepId} (같은 stepId가 안마다 있을 수 있다)
+    GUIDE = d.operationsGuide.phases.map(p => ({
+      key: p.key, title: p.title, sub: p.sub, intro: p.intro,
+      steps: p.steps.map(s => ({ id: `guide:${d.id}:${s.id}`, title: s.title, desc: s.desc, nodes: s.nodeIds, todo: s.todo, consolePath: s.consolePath, warn: s.warn })),
+    }));
+    checklists = d.operationsGuide.checklists || [];
+    allSteps = GUIDE.flatMap(t => t.steps.map(s => ({ ...s, tab: t.key })));
+  }
+  function clearDesign() {
+    current = null; nodes = []; byId = {}; edges = []; groups = []; GUIDE = []; allSteps = []; checklists = [];
+  }
 
   // ---------- State ----------
   const state = {
     tx: 0, ty: 0, scale: 1,
     selected: null, focus: new Set(),
-    tab: 'net', openStep: null,
+    tab: null, openStep: null,
     edit: false, deployed: false,
     done: new Set(),
   };
@@ -200,11 +170,11 @@
     groups.forEach(g => {
       const ns = g.ids.map(id => byId[id]).filter(Boolean);
       if (!ns.length) return;
-      const pad = 14;
+      const pad = g.pad;
       const x1 = Math.min(...ns.map(n => n.x)) - pad, y1 = Math.min(...ns.map(n => n.y)) - pad;
       const x2 = Math.max(...ns.map(n => n.x + NW)) + pad, y2 = Math.max(...ns.map(n => n.y + NH)) + pad;
       const box = document.createElement('div');
-      box.className = 'group-box';
+      box.className = `group-box kind-${g.kind}`;
       Object.assign(box.style, { left: x1 + 'px', top: y1 + 'px', width: x2 - x1 + 'px', height: y2 - y1 + 'px' });
       box.innerHTML = `<span>${g.label}</span>`;
       nodesEl.appendChild(box);
@@ -215,7 +185,8 @@
       el.className = 'node';
       el.dataset.id = n.id;
       el.style.cssText = `left:${n.x}px;top:${n.y}px;--c:${cat.c}`;
-      el.innerHTML = `<div class="tile">${svg(t.icon)}</div><div class="name">${t.name}</div><div class="cat">${cat.label}</div><i class="port"></i>`;
+      el.title = n.role ? `${n.label} — ${n.role}` : n.label;
+      el.innerHTML = `<div class="tile">${svg(t.icon)}</div><div class="name">${esc(n.label)}</div><div class="cat">${t.name}</div><i class="port"></i>`;
       nodesEl.appendChild(el);
       n.el = el;
     });
@@ -239,15 +210,28 @@
     const f = state.focus, sel = state.selected;
     const hit = (a, b) => sel ? (a === sel || b === sel) : (f.has(a) && f.has(b));
     edgesEl.classList.toggle('dim', !!sel || f.size > 0);
-    edgesEl.innerHTML = edges.filter(([a, b]) => byId[a] && byId[b]).map(([a, b]) =>
-      `<path${hit(a, b) ? ' class="hl"' : ''} d="${route(byId[a], byId[b])}"/>`).join('');
+    edgesEl.innerHTML = edges.filter(([a, b]) => byId[a] && byId[b]).map(([a, b, label]) => {
+      const on = hit(a, b);
+      return `<path${on ? ' class="hl"' : ''} d="${route(byId[a], byId[b])}"/>` + (label ? edgeLabel(byId[a], byId[b], label, on) : '');
+    }).join('');
+  }
+  // 선 가운데 부분에 연결 설명(label)을 쓴다
+  function edgeLabel(a, b, text, on) {
+    const ac = { x: a.x + NW / 2, y: a.y + NH / 2 }, bc = { x: b.x + NW / 2, y: b.y + NH / 2 };
+    const dx = bc.x - ac.x, dy = bc.y - ac.y;
+    let x, y;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      const sx = dx > 0 ? a.x + NW : a.x, tx = dx > 0 ? b.x : b.x + NW;
+      x = Math.round((sx + tx) / 2); y = Math.abs(dy) > 14 ? (ac.y + bc.y) / 2 : ac.y - 5;
+    } else { x = (ac.x + bc.x) / 2; y = Math.round(((dy > 0 ? a.y + NH : a.y) + (dy > 0 ? b.y : b.y + NH)) / 2); }
+    return `<text class="edge-label${on ? ' hl' : ''}" x="${x}" y="${y}" text-anchor="middle">${esc(text)}</text>`;
   }
 
   function paintHighlight() {
     nodes.forEach(n => {
       n.el.classList.toggle('selected', n.id === state.selected);
       n.el.classList.toggle('focus', state.focus.has(n.id));
-      n.el.classList.toggle('deployed', state.deployed && !!TYPES[n.type].tf);
+      n.el.classList.toggle('deployed', state.deployed && n.type !== 'users');
     });
     nodesEl.classList.toggle('dim', state.focus.size > 0);
     renderEdges();
@@ -314,6 +298,7 @@
 
   function fit() {
     state.homeView = null;
+    if (!nodes.length) return;
     const r = canvas.getBoundingClientRect();
     const { left, top, w, h } = visibleBox();
     const x1 = Math.min(...nodes.map(n => n.x)) - 30, y1 = Math.min(...nodes.map(n => n.y)) - 40;
@@ -399,12 +384,13 @@
 
   // ---------- Guide panel ----------
   function renderTabs() {
+    tabsEl.style.gridTemplateColumns = `repeat(${Math.max(GUIDE.length, 1)}, 1fr)`;
     tabsEl.innerHTML = GUIDE.map(t => {
       const d = t.steps.filter(s => state.done.has(s.id)).length;
       return `<button class="tab${t.key === state.tab ? ' active' : ''}" data-tab="${t.key}">${t.title}<small>${t.sub} · ${d}/${t.steps.length}</small></button>`;
     }).join('');
     const total = allSteps.length, done = allSteps.filter(s => state.done.has(s.id)).length;
-    $('#progBar').style.width = (done / total * 100) + '%';
+    $('#progBar').style.width = (total ? done / total * 100 : 0) + '%';
     $('#progText').textContent = `${done} / ${total} 완료`;
   }
   tabsEl.addEventListener('click', e => {
@@ -416,9 +402,12 @@
   function renderGuide() {
     renderTabs();
     const tab = GUIDE.find(t => t.key === state.tab);
+    if (!tab) { panelBody.innerHTML = '<div class="empty"><h4>설정 가이드가 아직 없어요</h4>3안을 만들면 선택한 안의 설정 순서가 여기에 나와요.</div>'; return; }
+    const isLast = GUIDE[GUIDE.length - 1].key === tab.key;
+    const lists = isLast && checklists.length ? `<div class="checklists">${checklists.map(c => `<section><h5>${esc(c.title)}</h5><ul>${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></section>`).join('')}</div>` : '';
     panelBody.innerHTML = `<p class="tab-intro">${tab.intro}</p>` + tab.steps.map((s, i) => {
       const open = state.openStep === s.id, done = state.done.has(s.id);
-      const chips = s.nodes.filter(id => byId[id]).map(id => `<span style="--c:${CAT[TYPES[byId[id].type].cat].c}"><i></i>${id}</span>`).join('');
+      const chips = s.nodes.filter(id => byId[id]).map(id => `<span style="--c:${CAT[TYPES[byId[id].type].cat].c}"><i></i>${esc(byId[id].label)}</span>`).join('');
       return `<div class="step${open ? ' open' : ''}${done ? ' done' : ''}" data-step="${s.id}">
         <div class="step-head">
           <button class="check" data-check title="완료 표시">${done ? '✓' : i + 1}</button>
@@ -428,14 +417,14 @@
         <div class="step-body">
           ${s.warn ? `<div class="warn">⚠ ${s.warn}</div>` : ''}
           <ol>${s.todo.map(t => `<li>${t}</li>`).join('')}</ol>
-          <div class="code-wrap"><pre class="code">${esc(s.cli)}</pre><button class="copy" data-copy>Copy</button></div>
+          ${s.consolePath ? `<div class="console-path"><small>AWS 콘솔 경로</small><b>${esc(s.consolePath)}</b></div>` : ''}
           <div class="step-actions">
             <button class="btn btn-primary" data-check>${done ? '완료 취소' : '완료로 표시'}</button>
             <button class="btn btn-ghost" data-ask>AI에게 묻기</button>
           </div>
         </div>
       </div>`;
-    }).join('');
+    }).join('') + lists;
     const openEl = panelBody.querySelector('.step.open');
     if (openEl) openEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
@@ -447,10 +436,6 @@
       state.done.has(id) ? state.done.delete(id) : state.done.add(id);
       saveDone(); renderGuide();
       if (state.done.has(id)) toast(`✓ ${step.title}`);
-      return;
-    }
-    if (e.target.closest('[data-copy]')) {
-      navigator.clipboard?.writeText(step.cli).then(() => toast('명령어를 복사했습니다'), () => toast('복사 실패'));
       return;
     }
     if (e.target.closest('[data-ask]')) { showChat(); ask(`"${step.title}" 단계 자세히 설명해줘`); return; }
@@ -482,52 +467,47 @@
 
   function greet() {
     log.innerHTML = ''; viewing = 'live';
-    addMsg('ai', `안녕하세요! 현재 스택은 서비스 ${nodes.length}개, 설정 단계 ${allSteps.length}개로 구성돼 있어요.\n오른쪽 가이드를 따라가다 막히면 물어보세요. 캔버스에서 서비스를 클릭하면 그 서비스 기준으로 답해 드립니다.\n\n먼저 시작할 단계: ${ref(nextStep()?.id || 'iam')}`);
+    if (!current) { addMsg('ai', '아직 만들어진 안이 없어요. 상단 바에서 다시 시도해 주세요.'); return; }
+    addMsg('ai', `안녕하세요! 지금 보는 안은 서비스 ${nodes.length}개, 설정 단계 ${allSteps.length}개로 구성돼 있어요.\n오른쪽 가이드를 따라가다 막히면 물어보세요. 캔버스에서 서비스를 클릭하면 그 서비스 기준으로 답해 드립니다.\n\n먼저 시작할 단계: ${ref(nextStep()?.id)}`);
   }
   const nextStep = () => allSteps.find(s => !state.done.has(s.id));
 
   function reply(q) {
     const lc = q.toLowerCase();
     const sel = state.selected && byId[state.selected];
+    if (!current) return '아직 만들어진 안이 없어요. 상단 바에서 3안을 다시 만들어 주세요.';
 
-    if (/dlq|dead/.test(lc)) {
-      const id = 'dlq' + (nodes.filter(n => n.id.startsWith('dlq')).length + 1);
-      const n = { id, type: 'sqs', x: 862 * S - 120, y: 600 * S };
-      nodes.push(n); byId[id] = n; edges.push(['q5', id]);
-      renderNodes(); state.focus = new Set(['q5', id]); paintHighlight();
-      return `q5 아래에 Dead-letter queue <b>${id}</b>를 추가했어요.\n• maxReceiveCount = 5\n• 메시지 보존 14일\nDLQ 알람은 다음 단계에서 설정하면 됩니다. ${ref('cw')}`;
-    }
     if (/비용|가격|cost|price|요금/.test(lc)) {
-      const agg = {};
-      nodes.forEach(x => { const t = TYPES[x.type]; agg[t.name] = (agg[t.name] || 0) + t.cost; });
-      const top = Object.entries(agg).sort((a, b) => b[1] - a[1]).slice(0, 4);
-      const total = Object.values(agg).reduce((a, b) => a + b, 0);
-      return `저트래픽 기준 월 예상 비용은 약 <b>$${total.toFixed(2)}</b>이에요.\n상위 항목:\n${top.map(([k, v]) => `• ${k} — $${v.toFixed(2)}`).join('\n')}\n\nMediaConvert가 가장 크니 출력 해상도 수를 줄이면 효과가 커요.`;
+      const mc = current.monthlyCost;
+      if (!mc) return '이 안은 월 비용을 계산하지 못했어요. 잠시 후 다시 시도해 주세요.';
+      const top = mc.items.filter(i => i.amount).sort((a, b) => b.amount - a.amount).slice(0, 3);
+      return `이 안의 월 예상 비용은 약 <b>${fmtKRW(mc.total)}</b>이에요. (≈ $${mc.totalUsd})\n${top.map(i => `• ${byId[i.nodeId]?.label || i.nodeId} — ${fmtKRW(i.amount)}`).join('\n')}\n\n${mc.overBudget ? '월 예산을 넘어요.' : '월 예산 안이에요.'} ${mc.freeTierNote}`;
+    }
+    if (/장점|단점|비교|pros|cons/.test(lc)) {
+      return `<b>${current.title}</b>\n장점\n${current.pros.map(x => `• ${esc(x)}`).join('\n')}\n\n단점\n${current.cons.map(x => `• ${esc(x)}`).join('\n')}`;
     }
     if (/다음|뭘|무엇|next|어디/.test(lc)) {
       const s = nextStep();
-      if (!s) return '모든 단계를 완료했어요 🎉 Deploy 후 CloudWatch 대시보드를 확인해 보세요.';
+      if (!s) return '모든 단계를 완료했어요 🎉 CloudWatch 알람이 잘 오는지 확인해 보세요.';
       openStep(s.id);
-      return `다음은 <b>${GUIDE.find(t => t.key === s.tab).title}</b> 탭의 "${s.title}" 단계예요.\n${s.desc}\n\n관련 서비스를 캔버스에서 강조해 뒀어요. ${ref(s.id)}`;
+      return `다음은 <b>${GUIDE.find(t => t.key === s.tab).title}</b> 단계의 "${s.title}"예요.\n${s.desc}\n\n관련 서비스를 캔버스에서 강조해 뒀어요. ${ref(s.id)}`;
     }
     const m = q.match(/"(.+?)"/);
     const stepByTitle = m && allSteps.find(s => s.title === m[1]);
     if (stepByTitle) {
-      return `<b>${stepByTitle.title}</b>\n${stepByTitle.desc}\n\n${stepByTitle.todo.map((t, i) => `${i + 1}. ${t}`).join('\n')}${stepByTitle.warn ? `\n\n⚠ ${stepByTitle.warn}` : ''}\n\nCLI 명령어는 가이드 카드에서 복사할 수 있어요. ${ref(stepByTitle.id)}`;
+      return `<b>${stepByTitle.title}</b>\n${stepByTitle.desc}\n\n${stepByTitle.todo.map((t, i) => `${i + 1}. ${t}`).join('\n')}${stepByTitle.warn ? `\n\n⚠ ${stepByTitle.warn}` : ''}${stepByTitle.consolePath ? `\n\n콘솔 경로: ${stepByTitle.consolePath}` : ''}\n\n${ref(stepByTitle.id)}`;
     }
-    const key = Object.keys(TYPES).find(k => lc.includes(k) || lc.includes(TYPES[k].name.toLowerCase().replace(/^(amazon|aws) /, '')));
+    const key = Object.keys(TYPES).find(k => lc.includes(k.replace('_', ' ')) || lc.includes(TYPES[k].name.toLowerCase().replace(/^(amazon|aws) /, '')));
     const target = key ? nodes.find(n => n.type === key) : sel;
     if (target) {
       const t = TYPES[target.type];
       const steps = allSteps.filter(s => s.nodes.includes(target.id));
-      const ins = edges.filter(e => e[1] === target.id).map(e => e[0]);
-      const outs = edges.filter(e => e[0] === target.id).map(e => e[1]);
-      return `<b>${t.name}</b> (${target.id})\n${t.role}\n\n• 입력: ${ins.join(', ') || '—'}\n• 출력: ${outs.join(', ') || '—'}\n\n관련 설정 단계:\n${steps.map(s => ref(s.id)).join('') || '—'}`;
+      const ins = edges.filter(e => e[1] === target.id).map(e => byId[e[0]]?.label);
+      const outs = edges.filter(e => e[0] === target.id).map(e => byId[e[1]]?.label);
+      return `<b>${esc(target.label)}</b> (${t.name})\n${esc(target.role || t.role)}\n${target.reason ? `\n왜 이 서비스인가요?\n${esc(target.reason)}\n` : ''}\n• 들어오는 연결: ${ins.join(', ') || '—'}\n• 나가는 연결: ${outs.join(', ') || '—'}\n\n관련 설정 단계:\n${steps.map(s => ref(s.id)).join('') || '—'}`;
     }
-    if (/구조|아키텍처|설명|흐름|architecture/.test(lc)) {
-      return '전체 흐름은 이렇습니다.\n1. 사용자 → Route 53 → CloudFront(WAF) → S3 정적 웹\n2. 로그인은 Cognito, API는 API Gateway → Lambda → DynamoDB\n3. 업로드된 파일 → S3 이벤트 → SNS → SQS 5개로 팬아웃\n4. 워커 Lambda가 MediaConvert(영상 변환), Rekognition(분석) 실행\n5. 완료 이벤트는 EventBridge → Lambda가 상태 업데이트';
-    }
-    return `"${esc(q)}"에 대해서는 프로토타입이라 아직 답을 준비하지 못했어요.\n이런 걸 물어보세요:\n• 다음에 뭘 설정해야 해?\n• SQS / Lambda / CloudFront 설명\n• DLQ 추가해줘\n• 월 예상 비용`;
+    if (/구조|아키텍처|설명|흐름|architecture|요약/.test(lc)) return esc(current.summary);
+    return `"${esc(q)}"에 대해서는 프로토타입이라 아직 답을 준비하지 못했어요.\n이런 걸 물어보세요:\n• 다음에 뭘 설정해야 해?\n• 이 안의 장단점 알려줘\n• 월 예상 비용 알려줘`;
   }
 
   function ask(q) {
@@ -551,15 +531,15 @@
 
   // --- 대화 기록 리스트 (목 데이터) ---
   const CHAT_HISTORY = [
-    { id: 'h1', title: 'DLQ 추가 방법 문의', when: '오늘 14:20', msgs: [
-      ['me', 'SQS에 DLQ 추가해줘'],
-      ['ai', 'q5 아래에 Dead-letter queue <b>dlq1</b>를 추가했어요.\n• maxReceiveCount = 5\n• 메시지 보존 14일'] ] },
+    { id: 'h1', title: 'RDS와 DynamoDB 차이 문의', when: '오늘 14:20', msgs: [
+      ['me', 'RDS와 DynamoDB 중에 뭐가 나아요?'],
+      ['ai', '<b>DynamoDB</b>는 사용한 만큼만 내서 최소비용안에 맞고, <b>RDS</b>는 SQL을 쓸 수 있지만 켜 두는 동안 고정 비용이 나와요.'] ] },
     { id: 'h2', title: '월 예상 비용 확인', when: '어제 18:05', msgs: [
       ['me', '월 예상 비용 알려줘'],
-      ['ai', '저트래픽 기준 월 예상 비용은 약 <b>$42.10</b>이에요.\nMediaConvert가 가장 크니 출력 해상도 수를 줄이면 효과가 커요.'] ] },
-    { id: 'h3', title: 'Cognito 설정 순서', when: '11월 21일', msgs: [
-      ['me', '다음에 뭘 설정해야 해?'],
-      ['ai', '다음은 <b>네트워크·보안</b> 탭의 "Cognito User Pool 구성" 단계예요.\n사용자 가입·로그인과 JWT 발급을 설정합니다.'] ] },
+      ['ai', '이 안의 월 예상 비용은 약 <b>1,147원</b>이에요.\n월 예산 안이에요.'] ] },
+    { id: 'h3', title: 'Cognito가 왜 필요한가요?', when: '11월 21일', msgs: [
+      ['me', 'Cognito는 꼭 써야 해요?'],
+      ['ai', '로그인을 직접 만들지 않아도 돼서 균형형에서 추천해요. 최소비용안은 로그인이 없다면 빼도 돼요.'] ] },
   ];
   const histEl = $('#chatHistory'), histBtn = $('#chatHistoryBtn');
   let liveHTML = null, viewing = 'live';
@@ -681,14 +661,121 @@
   }
   modeBtn.onclick = toggleEdit;
 
-  const menu = $('#stackMenu');
-  $('#stackSelect').onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
+  // ---------- 3안 선택 · 비교 · 실패 처리 ----------
+  const menu = $('#stackMenu'), tierBtn = $('#stackSelect');
+  // 탭(메뉴 항목)은 designs[]와 failures[]에 있는 tier로만 만든다. 3개를 가정하지 않는다.
+  const tierEntries = () => TIER_ORDER.map(t => {
+    const d = job.designs.find(x => x.tier === t);
+    return d ? { tier: t, design: d } : job.failures.some(f => f.tier === t) ? { tier: t, failed: true } : null;
+  }).filter(Boolean);
+  const diffClass = d => `diff diff-${d.difficulty.level}`;
+  const costLine = d => d.monthlyCost ? `월 ${fmtKRW(d.monthlyCost.total)}` : '비용 계산 불가';
+
+  function renderTierMenu() {
+    menu.innerHTML = tierEntries().map(e => {
+      if (e.failed) return `<button class="tier-item failed" data-tier="${e.tier}"><span class="tier-name">${TIER_LABEL[e.tier]}</span><span class="tier-fail">⚠ 만들지 못했어요 · 눌러서 다시 시도</span></button>`;
+      const d = e.design, cur = current && current.id === d.id;
+      return `<button class="tier-item${cur ? ' current' : ''}" data-tier="${e.tier}" role="menuitemradio" aria-checked="${cur}">
+        <span class="tier-name">${TIER_LABEL[e.tier]}${cur ? '<i class="tier-check">✓</i>' : ''}</span>
+        <span class="tier-title">${esc(d.title)}</span>
+        <span class="tier-meta"><b>${costLine(d)}</b><span class="${diffClass(d)}">난이도 ${esc(d.difficulty.label)}</span>${d.monthlyCost?.overBudget ? '<span class="meta-pill over">예산 초과</span>' : ''}</span>
+      </button>`;
+    }).join('');
+  }
+
+  function updateTierUI() {
+    $('#stackName').textContent = current ? TIER_LABEL[current.tier] : '안 없음';
+    $('#guideSub').textContent = current ? `${current.title} · ap-northeast-2` : '3안을 만들지 못했어요';
+    $('#tierMeta').innerHTML = current ? [
+      `<span class="meta-pill"><b>${costLine(current)}</b></span>`,
+      `<span class="meta-pill ${diffClass(current)}">난이도 ${esc(current.difficulty.label)}</span>`,
+      current.monthlyCost?.freeTier ? '<span class="meta-pill ok">Free Tier 적용</span>' : '',
+      current.monthlyCost?.overBudget ? '<span class="meta-pill over">예산 초과</span>' : '',
+    ].join('') : '';
+    renderTierMenu();
+  }
+
+  function showDesign(d, { announce = true } = {}) {
+    state.selected = null; state.focus = new Set(); state.openStep = null; state.homeView = null; state.deployed = false;
+    loadDesign(d);
+    state.tab = GUIDE[0]?.key || null;
+    $('#deployStatus').textContent = '배포 전'; $('#deployStatus').className = 'pill';
+    $('#chatCtx').textContent = '컨텍스트: 전체 스택';
+    updateTierUI(); renderNodes(); renderGuide(); fit();
+    if (announce && viewing === 'live') addMsg('ai', `<b>${TIER_LABEL[d.tier]}</b> 안으로 바꿨어요. 서비스 ${nodes.length}개, 설정 단계 ${allSteps.length}개예요.`);
+  }
+
+  tierBtn.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
   menu.onclick = e => {
-    const b = e.target.closest('[data-stack]'); if (!b) return;
-    $('#stackName').textContent = b.dataset.stack; menu.hidden = true;
-    $('#guideSub').textContent = `${b.dataset.stack} · ap-northeast-2`;
-    toast(`Switched to ${b.dataset.stack}`);
+    const b = e.target.closest('[data-tier]'); if (!b) return;
+    menu.hidden = true;
+    const en = tierEntries().find(x => x.tier === b.dataset.tier);
+    if (!en) return;
+    if (en.failed) openFail(en.tier);
+    else if (!current || current.id !== en.design.id) showDesign(en.design);
   };
+
+  // --- 3안 비교 표 ---
+  const cmpModal = $('#compareModal');
+  function renderCompare() {
+    const es = tierEntries();
+    const head = es.map(e => {
+      if (e.failed) return `<th class="cmp-failed"><span class="tier-name">${TIER_LABEL[e.tier]}</span><p>만들지 못했어요</p><button class="btn" data-retry="${e.tier}">다시 시도</button></th>`;
+      const cur = current && current.id === e.design.id;
+      return `<th class="${cur ? 'current' : ''}"><span class="tier-name">${TIER_LABEL[e.tier]}</span><h4>${esc(e.design.title)}</h4>${cur ? '<span class="cur-badge">보고 있는 안</span>' : `<button class="btn btn-primary" data-pick="${e.tier}">이 안 선택</button>`}</th>`;
+    }).join('');
+    const row = (label, fn) => `<tr><th scope="row">${label}</th>${es.map(e => e.failed ? '<td class="muted">—</td>' : `<td>${fn(e.design)}</td>`).join('')}</tr>`;
+    const list = (a, tag = 'ul') => `<${tag}>${a.map(x => `<li>${esc(x)}</li>`).join('')}</${tag}>`;
+    $('#compareBody').innerHTML = `<table class="cmp"><thead><tr><td></td>${head}</tr></thead><tbody>
+      ${row('월 예상 비용', d => d.monthlyCost
+        ? `<b class="cmp-cost">${fmtKRW(d.monthlyCost.total)}</b><small>≈ $${d.monthlyCost.totalUsd} · 환율 ${d.monthlyCost.exchangeRate.toLocaleString('ko-KR')}원 (${d.monthlyCost.exchangeRateDate})</small>${d.monthlyCost.overBudget ? '<em class="over">월 예산 초과</em>' : '<em class="within">월 예산 안</em>'}`
+        : '비용을 계산하지 못했어요')}
+      ${row('Free Tier', d => d.monthlyCost ? `${d.monthlyCost.freeTier ? '적용' : '적용 안 됨'}<small>${esc(d.monthlyCost.freeTierNote)}</small>` : '—')}
+      ${row('운영 난이도', d => `<span class="${diffClass(d)}">${esc(d.difficulty.label)}</span><small>${esc(d.difficulty.reason)}</small>`)}
+      ${row('한 줄 요약', d => esc(d.summary))}
+      ${row('예산 설명', d => esc(d.budgetNote))}
+      ${row('장점', d => list(d.pros))}
+      ${row('단점', d => list(d.cons))}
+      ${row('성장 로드맵', d => list(d.scalingPath, 'ol'))}
+    </tbody></table>`;
+  }
+  $('#compareBtn').onclick = () => { renderCompare(); cmpModal.hidden = false; };
+  cmpModal.onclick = e => {
+    if (e.target === cmpModal || e.target.hasAttribute('data-close')) { cmpModal.hidden = true; return; }
+    const pick = e.target.closest('[data-pick]'), retry = e.target.closest('[data-retry]');
+    if (pick) { const d = job.designs.find(x => x.tier === pick.dataset.pick); cmpModal.hidden = true; if (d) showDesign(d); }
+    if (retry) { cmpModal.hidden = true; openFail(retry.dataset.retry); }
+  };
+
+  // --- "만들지 못했어요" 모달 + 다시 시도 ---
+  const failModal = $('#failModal'), failRetry = $('#failRetry');
+  let failTier = null;
+  function openFail(tier) {
+    failTier = tier;
+    const err = job.error;
+    $('#failTitle').textContent = tier ? `${TIER_LABEL[tier]}은 만들지 못했어요` : '구성도를 만들지 못했어요';
+    $('#failText').textContent = tier ? '이 안은 만들지 못했어요. 다시 시도해 주세요.' : (ERROR_TEXT[err?.code] || ERROR_TEXT.DESIGN_GENERATION_FAILED);
+    failRetry.hidden = !tier && err && err.retryable === false;
+    failRetry.disabled = false; failRetry.textContent = '다시 시도';
+    failModal.hidden = false;
+  }
+  // 안별 재시도 API는 없고, 다시 시도는 POST /designs로 새로 생성한다. 프로토타입은 잠깐 기다린 뒤 성공으로 바꾼다.
+  failRetry.onclick = () => {
+    failRetry.disabled = true; failRetry.textContent = '다시 만드는 중…';
+    setTimeout(() => {
+      const t = failTier;
+      if (t) {
+        const d = structuredClone(MOCK.completed.designs.find(x => x.tier === t));
+        job.designs.push(d); job.designs.sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier));
+        job.failures = job.failures.filter(f => f.tier !== t);
+        failModal.hidden = true; showDesign(d); toast(`${TIER_LABEL[t]}을 만들었어요`);
+      } else {
+        job = structuredClone(MOCK.completed);
+        failModal.hidden = true; showDesign(job.designs[0], { announce: false }); toast('3안을 만들었어요');
+      }
+    }, 1400);
+  };
+  failModal.onclick = e => { if ((e.target === failModal || e.target.hasAttribute('data-close')) && !failRetry.disabled) failModal.hidden = true; };
   document.addEventListener('click', () => { menu.hidden = true; });
   $('#bellBtn').onclick = () => { $('#bellDot').hidden = true; toast(state.deployed ? 'Deployment completed successfully' : 'No new notifications'); };
 
@@ -696,7 +783,7 @@
   const deployBtn = $('#deployBtn'), status = $('#deployStatus');
   deployBtn.onclick = async () => {
     deployBtn.disabled = true; state.deployed = false; paintHighlight();
-    const targets = nodes.filter(n => TYPES[n.type].tf);
+    const targets = nodes.filter(n => n.type !== 'users');
     status.className = 'pill';
     for (let i = 0; i < targets.length; i++) {
       status.textContent = `Deploying… ${i + 1}/${targets.length}`;
@@ -708,8 +795,8 @@
     state.deployed = true;
     status.textContent = 'Stack deployed ✓'; status.className = 'pill ok';
     deployBtn.disabled = false; $('#bellDot').hidden = false;
-    state.done.add('deploy'); saveDone(); renderGuide();
-    addMsg('ai', `배포가 완료됐어요 ✅ 리소스 ${targets.length}개가 생성되었습니다.\n이제 동작 검증을 진행해 보세요. ${ref('deploy')}`);
+    renderGuide();
+    addMsg('ai', `배포가 완료됐어요 ✅ 리소스 ${targets.length}개가 생성되었습니다.\n이제 설정 가이드의 마지막 단계에서 알람을 확인해 보세요.`);
     showChat();
   };
 
@@ -734,7 +821,7 @@
     else if (e.key === '0') fit();
     else if (e.key.toLowerCase() === 'e') toggleEdit();
     else if (e.key === '/') { e.preventDefault(); showChat(); input.focus(); }
-    else if (e.key === 'Escape') { selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; closeHistory(); }
+    else if (e.key === 'Escape') { selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; cmpModal.hidden = true; if (!failRetry.disabled) failModal.hidden = true; closeHistory(); }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && state.selected) {
       const id = state.selected;
       nodes.splice(nodes.findIndex(n => n.id === id), 1); delete byId[id];
@@ -752,6 +839,10 @@
   }
 
   // ---------- Init ----------
-  renderNodes(); renderGuide(); greet(); fit(); updateTopbar();
+  const firstOk = tierEntries().find(e => !e.failed);
+  if (firstOk) showDesign(firstOk.design, { announce: false });
+  else { clearDesign(); state.tab = null; updateTierUI(); renderNodes(); renderGuide(); }
+  greet(); fit(); updateTopbar();
+  if (!firstOk) openFail(null);
   addEventListener('resize', () => { restoreWidths(); updateTopbar(); });
 })();

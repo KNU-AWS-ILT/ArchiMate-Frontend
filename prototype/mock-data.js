@@ -1,0 +1,2106 @@
+/* 목 데이터: ArchiMate-Backend `contracts/examples/`의 응답 예시를 그대로 복사한 것이다.
+ * - completed      : design_job_completed.json (3안 모두 성공)
+ * - partialFailed  : design_job_partial_failed.json (일부 안 실패, status: completed)
+ * - failed         : design_job_failed.json (전부 실패, status: failed)
+ * 계약이 바뀌면(`[contract]` PR) 이 파일을 다시 복사한다. 모양을 임의로 바꾸지 않는다.
+ * 프로토타입은 file://로도 열리므로 fetch 대신 전역 변수로 둔다.
+ */
+window.MOCK = {
+completed: {
+ "jobId": "job_demo",
+ "status": "completed",
+ "designs": [
+  {
+   "title": "서버리스 최소비용 구성",
+   "summary": "정적 화면은 S3와 CloudFront로, API는 API Gateway와 Lambda로, 데이터는 DynamoDB에 저장합니다. 사용한 만큼만 비용이 나와 동시 사용자 100명 수준에서는 대부분 Free Tier 안에서 운영됩니다.",
+   "difficulty": {
+    "level": 1,
+    "reason": "서버를 직접 관리하지 않아 콘솔에서 몇 번의 설정만으로 운영할 수 있어요.",
+    "label": "쉬움"
+   },
+   "architecture": {
+    "nodes": [
+     {
+      "id": "users",
+      "serviceType": "users",
+      "label": "사용자",
+      "groupId": null,
+      "role": "브라우저로 모집 공고를 보고 지원서를 내는 사람",
+      "reason": "모든 요청이 시작되는 지점이에요.",
+      "usage": null
+     },
+     {
+      "id": "cdn",
+      "serviceType": "cloudfront",
+      "label": "CDN",
+      "groupId": null,
+      "role": "웹 화면을 전 세계에 빠르게 전달하고 HTTPS를 제공",
+      "reason": "정적 파일을 캐시해 S3 요청과 전송 비용을 줄이고, 무료 HTTPS 인증서를 붙일 수 있습니다.",
+      "usage": {
+       "monthlyRequests": 300000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 5.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "web_bucket",
+      "serviceType": "s3",
+      "label": "웹 화면 저장소",
+      "groupId": "region_seoul",
+      "role": "빌드한 React 정적 파일 보관",
+      "reason": "서버 없이 정적 파일을 저렴하게 보관할 수 있어 바이브 코딩으로 만든 프론트를 그대로 올리기 좋습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_gw",
+      "serviceType": "api_gateway",
+      "label": "API 입구",
+      "groupId": "region_seoul",
+      "role": "브라우저의 API 요청을 받아 Lambda로 전달",
+      "reason": "요청 수만큼만 과금되고 인증·요청 제한 기능이 기본 제공됩니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_lambda",
+      "serviceType": "lambda",
+      "label": "API 처리 함수",
+      "groupId": "region_seoul",
+      "role": "지원서 제출·조회 등 비즈니스 로직 실행",
+      "reason": "요청이 없을 때는 비용이 0원이고 서버 패치·확장을 AWS가 대신합니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": 200,
+       "memoryMb": 256,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app_db",
+      "serviceType": "dynamodb",
+      "label": "지원서 DB",
+      "groupId": "region_seoul",
+      "role": "동아리 공고와 지원서 저장",
+      "reason": "온디맨드 모드는 읽기·쓰기만큼만 과금되고 서버 관리가 없어 AWS 경험이 없는 팀에 적합합니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": 500000,
+       "monthlyWrites": 50000,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "logs",
+      "serviceType": "cloudwatch",
+      "label": "로그·알람",
+      "groupId": "region_seoul",
+      "role": "Lambda 로그 수집과 오류 알람",
+      "reason": "Lambda 로그가 자동으로 쌓여 장애 원인을 바로 찾을 수 있습니다.",
+      "usage": null
+     }
+    ],
+    "edges": [
+     {
+      "from": "users",
+      "to": "cdn",
+      "label": "웹 접속 (HTTPS)"
+     },
+     {
+      "from": "cdn",
+      "to": "web_bucket",
+      "label": "정적 파일"
+     },
+     {
+      "from": "users",
+      "to": "api_gw",
+      "label": "API 요청"
+     },
+     {
+      "from": "api_gw",
+      "to": "api_lambda",
+      "label": null
+     },
+     {
+      "from": "api_lambda",
+      "to": "app_db",
+      "label": "지원서 읽기/쓰기"
+     },
+     {
+      "from": "api_lambda",
+      "to": "logs",
+      "label": "로그"
+     }
+    ],
+    "groups": [
+     {
+      "id": "region_seoul",
+      "kind": "region",
+      "label": "서울 리전 (ap-northeast-2)",
+      "parentId": null
+     }
+    ]
+   },
+   "pros": [
+    "트래픽이 적을 때 비용이 거의 0원",
+    "서버 관리가 필요 없음",
+    "모집 기간 트래픽 급증에 자동 대응"
+   ],
+   "cons": [
+    "DynamoDB는 SQL처럼 자유로운 조회가 어려움",
+    "Lambda 콜드 스타트로 첫 응답이 느릴 수 있음"
+   ],
+   "budgetNote": "월 5만 원 예산보다 훨씬 낮은 수준으로 운영할 수 있고 대부분 Free Tier 범위입니다.",
+   "scalingPath": [
+    "사용자 1만 명: DynamoDB 키 설계 점검, CloudFront 캐시 정책 조정",
+    "사용자 10만 명: Lambda 동시 실행 한도 상향 요청, 읽기 많은 데이터에 캐시 추가"
+   ],
+   "tier": "minimal_cost",
+   "operationsGuide": {
+    "phases": [
+     {
+      "key": "account",
+      "title": "계정 준비",
+      "sub": "1단계",
+      "intro": "리소스를 만들기 전에 계정을 안전하게 하고, 예산을 넘지 않게 알람부터 켜요.",
+      "steps": [
+       {
+        "id": "account_security",
+        "title": "AWS 계정 보안 설정",
+        "desc": "루트 계정이 털리면 모든 리소스가 위험해져요. 로그인 2단계 인증을 켜고 평소에는 별도 사용자로 작업해요.",
+        "nodeIds": [],
+        "todo": [
+         "루트 계정에 MFA(로그인 2단계 인증)를 켜요.",
+         "일상 작업용 IAM 사용자를 만들고 그 사용자로 다시 로그인해요."
+        ],
+        "consolePath": "IAM > 사용자 > 사용자 생성",
+        "warn": "루트 계정의 액세스 키는 만들지 마세요."
+       },
+       {
+        "id": "budget_alarm",
+        "title": "예산 알람 먼저 만들기",
+        "desc": "예상 밖 청구를 막으려고 월 예산의 80%에 이르면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [],
+        "todo": [
+         "AWS Budgets에서 월 비용 예산을 만들고, 금액에는 월 예산 5만 원을 달러로 바꾼 36(USD)을 넣어요.",
+         "예측 비용이 80%를 넘으면 이메일을 받도록 알림을 추가해요.",
+         "Billing 기본 설정에서 'AWS 프리 티어 사용 알림 수신'을 켜요."
+        ],
+        "consolePath": "Billing and Cost Management > Budgets > 예산 생성",
+        "warn": "알림 이메일 인증을 해야 알림이 와요."
+       }
+      ]
+     },
+     {
+      "key": "data",
+      "title": "데이터 저장소",
+      "sub": "2단계",
+      "intro": "백엔드가 쓸 데이터베이스를 먼저 만들어요.",
+      "steps": [
+       {
+        "id": "create_db",
+        "title": "데이터베이스 만들기",
+        "desc": "지원서 데이터를 저장할 데이터베이스를 만들어요.",
+        "nodeIds": [
+         "app_db"
+        ],
+        "todo": [
+         "설계도의 데이터베이스 서비스로 저장소를 만들어요.",
+         "자동 백업(또는 특정 시점 복구)을 켜요."
+        ],
+        "consolePath": null,
+        "warn": null
+       }
+      ]
+     },
+     {
+      "key": "web",
+      "title": "화면 배포",
+      "sub": "3단계",
+      "intro": "React 빌드 결과를 올리고 CloudFront로 전 세계에 빠르게 전달해요.",
+      "steps": [
+       {
+        "id": "upload_web",
+        "title": "웹 화면 업로드",
+        "desc": "빌드한 정적 파일을 S3 버킷에 올려요.",
+        "nodeIds": [
+         "web_bucket"
+        ],
+        "todo": [
+         "버킷을 만들고 '퍼블릭 액세스 차단'을 켠 채로 둬요.",
+         "npm run build 결과 폴더의 파일을 업로드해요."
+        ],
+        "consolePath": "S3 > 버킷 만들기",
+        "warn": null
+       },
+       {
+        "id": "connect_cdn",
+        "title": "CloudFront 연결",
+        "desc": "CloudFront 배포를 만들어 버킷을 연결하면 HTTPS 주소가 생겨요.",
+        "nodeIds": [
+         "cdn",
+         "web_bucket"
+        ],
+        "todo": [
+         "원본으로 S3 버킷을 고르고 OAC(원본 접근 제어)를 만들어요.",
+         "안내에 나오는 버킷 정책을 S3 버킷에 붙여 넣어요."
+        ],
+        "consolePath": "CloudFront > 배포 생성",
+        "warn": "화면을 고친 뒤에는 캐시 무효화를 해야 바로 반영돼요."
+       }
+      ]
+     },
+     {
+      "key": "ops",
+      "title": "운영",
+      "sub": "4단계",
+      "intro": "장애를 사용자보다 먼저 알 수 있게 로그와 알람을 켜요.",
+      "steps": [
+       {
+        "id": "error_alarm",
+        "title": "오류 알람 설정",
+        "desc": "오류가 갑자기 늘면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [
+         "logs"
+        ],
+        "todo": [
+         "CloudWatch에서 백엔드 오류 수 지표로 알람을 만들어요.",
+         "5분 동안 오류가 5번 넘으면 이메일을 받게 해요."
+        ],
+        "consolePath": "CloudWatch > 경보 > 경보 생성",
+        "warn": null
+       }
+      ]
+     }
+    ],
+    "checklists": [
+     {
+      "key": "cost",
+      "title": "비용 알람이 왔을 때",
+      "items": [
+       "Cost Explorer에서 어느 서비스 비용이 늘었는지 확인해요.",
+       "평소보다 요청이 많은 시간대가 있는지 CloudWatch 지표로 확인해요.",
+       "쓰지 않는 리소스가 켜져 있으면 지워요."
+      ]
+     },
+     {
+      "key": "incident",
+      "title": "장애가 났을 때",
+      "items": [
+       "화면이 예전 버전으로 보이면 CloudFront 캐시 무효화(/*)를 실행해요.",
+       "API가 5xx 오류를 내면 CloudWatch Logs에서 최근 오류 로그를 확인해요.",
+       "요청이 429로 거부되면 스로틀링 지표를 확인하고 한도를 조정해요."
+      ]
+     }
+    ]
+   },
+   "id": "job_demo_minimal_cost",
+   "monthlyCost": {
+    "currency": "KRW",
+    "total": 1147,
+    "totalUsd": 0.83,
+    "exchangeRate": 1380.0,
+    "exchangeRateDate": "2026-11-20",
+    "priceDate": "2026-11-20",
+    "freeTier": false,
+    "freeTierNote": "Lambda·CloudFront·DynamoDB 항상 무료 한도를 빼고 계산했어요. 계산에서 빠진 항목은 합계에 포함되지 않았어요. (가입 크레딧은 반영하지 않았어요)",
+    "overBudget": false,
+    "items": [
+     {
+      "nodeId": "cdn",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 30만 건, 전송 5GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "web_bucket",
+      "amount": 35,
+      "amountUsd": 0.03,
+      "note": "저장 1GB 기준 (요청 요금 제외)"
+     },
+     {
+      "nodeId": "api_gw",
+      "amount": 966,
+      "amountUsd": 0.7,
+      "note": "REST API 요청 월 20만 건 기준"
+     },
+     {
+      "nodeId": "api_lambda",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 20만 건, 256MB·200ms 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "app_db",
+      "amount": 146,
+      "amountUsd": 0.11,
+      "note": "온디맨드 읽기 월 50만 건, 쓰기 5만 건, 저장 1GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "logs",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     }
+    ]
+   }
+  },
+  {
+   "title": "서버리스 + 관계형 DB 균형 구성",
+   "summary": "API는 Lambda로 유지하되 데이터는 익숙한 SQL을 쓸 수 있는 RDS(PostgreSQL)에 저장합니다. 로그인은 Cognito로 처리해 직접 인증을 구현하지 않아도 됩니다.",
+   "difficulty": {
+    "level": 2,
+    "reason": "관계형 DB와 VPC 설정을 이해해야 해서 최소비용안보다 손이 조금 더 가요.",
+    "label": "보통"
+   },
+   "architecture": {
+    "nodes": [
+     {
+      "id": "users",
+      "serviceType": "users",
+      "label": "사용자",
+      "groupId": null,
+      "role": "브라우저로 모집 공고를 보고 지원서를 내는 사람",
+      "reason": "모든 요청이 시작되는 지점이에요.",
+      "usage": null
+     },
+     {
+      "id": "cdn",
+      "serviceType": "cloudfront",
+      "label": "CDN",
+      "groupId": null,
+      "role": "웹 화면 전달과 HTTPS 제공",
+      "reason": "정적 파일을 캐시해 빠르고 저렴하게 전달합니다.",
+      "usage": {
+       "monthlyRequests": 300000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 5.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "web_bucket",
+      "serviceType": "s3",
+      "label": "웹 화면 저장소",
+      "groupId": "region_seoul",
+      "role": "React 빌드 파일 보관",
+      "reason": "정적 파일 보관 비용이 매우 낮습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "auth",
+      "serviceType": "cognito",
+      "label": "회원 인증",
+      "groupId": "region_seoul",
+      "role": "회원가입·로그인·토큰 발급",
+      "reason": "비밀번호 저장과 토큰 관리를 직접 구현하지 않아도 되어 보안 사고 위험이 줄어듭니다.",
+      "usage": null
+     },
+     {
+      "id": "api_gw",
+      "serviceType": "api_gateway",
+      "label": "API 입구",
+      "groupId": "region_seoul",
+      "role": "API 요청 수신과 토큰 검증",
+      "reason": "Cognito 토큰 검증을 설정만으로 붙일 수 있습니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_lambda",
+      "serviceType": "lambda",
+      "label": "API 처리 함수",
+      "groupId": "private_a",
+      "role": "비즈니스 로직 실행과 DB 접근",
+      "reason": "서버 관리 없이 API를 운영하면서 VPC 안의 RDS에 안전하게 접근합니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": 300,
+       "memoryMb": 512,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app_db",
+      "serviceType": "rds",
+      "label": "PostgreSQL DB",
+      "groupId": "private_a",
+      "role": "회원·공고·지원서 저장",
+      "reason": "SQL로 자유롭게 조회할 수 있고 바이브 코딩 도구가 만든 ORM 코드를 그대로 쓸 수 있습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 20.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": "db.t4g.micro",
+       "instanceCount": 1,
+       "hoursPerMonth": 730,
+       "multiAz": false
+      }
+     },
+     {
+      "id": "logs",
+      "serviceType": "cloudwatch",
+      "label": "로그·알람",
+      "groupId": "region_seoul",
+      "role": "로그 수집과 오류·비용 알람",
+      "reason": "장애 원인 추적과 알람을 한 곳에서 관리합니다.",
+      "usage": null
+     }
+    ],
+    "edges": [
+     {
+      "from": "users",
+      "to": "cdn",
+      "label": "웹 접속 (HTTPS)"
+     },
+     {
+      "from": "cdn",
+      "to": "web_bucket",
+      "label": "정적 파일"
+     },
+     {
+      "from": "users",
+      "to": "auth",
+      "label": "로그인"
+     },
+     {
+      "from": "users",
+      "to": "api_gw",
+      "label": "API 요청 (토큰)"
+     },
+     {
+      "from": "api_gw",
+      "to": "auth",
+      "label": "토큰 검증"
+     },
+     {
+      "from": "api_gw",
+      "to": "api_lambda",
+      "label": null
+     },
+     {
+      "from": "api_lambda",
+      "to": "app_db",
+      "label": "SQL"
+     },
+     {
+      "from": "api_lambda",
+      "to": "logs",
+      "label": "로그"
+     }
+    ],
+    "groups": [
+     {
+      "id": "region_seoul",
+      "kind": "region",
+      "label": "서울 리전 (ap-northeast-2)",
+      "parentId": null
+     },
+     {
+      "id": "vpc_main",
+      "kind": "vpc",
+      "label": "VPC (10.0.0.0/16)",
+      "parentId": "region_seoul"
+     },
+     {
+      "id": "private_a",
+      "kind": "private_subnet",
+      "label": "프라이빗 서브넷",
+      "parentId": "vpc_main"
+     }
+    ]
+   },
+   "pros": [
+    "익숙한 SQL과 ORM 사용 가능",
+    "회원 인증을 관리형 서비스로 해결",
+    "서버 관리 부담이 여전히 낮음"
+   ],
+   "cons": [
+    "RDS 때문에 트래픽이 없어도 월 고정 비용 발생",
+    "VPC 구성으로 설정 난이도가 조금 올라감"
+   ],
+   "budgetNote": "RDS 고정 비용이 생기지만 월 5만 원 예산 안에서 여유 있게 운영할 수 있는 수준입니다.",
+   "scalingPath": [
+    "사용자 1만 명: RDS Proxy 도입, 인스턴스 한 단계 상향",
+    "사용자 10만 명: RDS Multi-AZ 전환과 읽기 전용 복제본 추가"
+   ],
+   "tier": "balanced",
+   "operationsGuide": {
+    "phases": [
+     {
+      "key": "account",
+      "title": "계정 준비",
+      "sub": "1단계",
+      "intro": "리소스를 만들기 전에 계정을 안전하게 하고, 예산을 넘지 않게 알람부터 켜요.",
+      "steps": [
+       {
+        "id": "account_security",
+        "title": "AWS 계정 보안 설정",
+        "desc": "루트 계정이 털리면 모든 리소스가 위험해져요. 로그인 2단계 인증을 켜고 평소에는 별도 사용자로 작업해요.",
+        "nodeIds": [],
+        "todo": [
+         "루트 계정에 MFA(로그인 2단계 인증)를 켜요.",
+         "일상 작업용 IAM 사용자를 만들고 그 사용자로 다시 로그인해요."
+        ],
+        "consolePath": "IAM > 사용자 > 사용자 생성",
+        "warn": "루트 계정의 액세스 키는 만들지 마세요."
+       },
+       {
+        "id": "budget_alarm",
+        "title": "예산 알람 먼저 만들기",
+        "desc": "예상 밖 청구를 막으려고 월 예산의 80%에 이르면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [],
+        "todo": [
+         "AWS Budgets에서 월 비용 예산을 만들고, 금액에는 월 예산 5만 원을 달러로 바꾼 36(USD)을 넣어요.",
+         "예측 비용이 80%를 넘으면 이메일을 받도록 알림을 추가해요.",
+         "Billing 기본 설정에서 'AWS 프리 티어 사용 알림 수신'을 켜요."
+        ],
+        "consolePath": "Billing and Cost Management > Budgets > 예산 생성",
+        "warn": "알림 이메일 인증을 해야 알림이 와요."
+       }
+      ]
+     },
+     {
+      "key": "data",
+      "title": "데이터 저장소",
+      "sub": "2단계",
+      "intro": "백엔드가 쓸 데이터베이스를 먼저 만들어요.",
+      "steps": [
+       {
+        "id": "create_db",
+        "title": "데이터베이스 만들기",
+        "desc": "지원서 데이터를 저장할 데이터베이스를 만들어요.",
+        "nodeIds": [
+         "app_db"
+        ],
+        "todo": [
+         "설계도의 데이터베이스 서비스로 저장소를 만들어요.",
+         "자동 백업(또는 특정 시점 복구)을 켜요."
+        ],
+        "consolePath": null,
+        "warn": null
+       }
+      ]
+     },
+     {
+      "key": "web",
+      "title": "화면 배포",
+      "sub": "3단계",
+      "intro": "React 빌드 결과를 올리고 CloudFront로 전 세계에 빠르게 전달해요.",
+      "steps": [
+       {
+        "id": "upload_web",
+        "title": "웹 화면 업로드",
+        "desc": "빌드한 정적 파일을 S3 버킷에 올려요.",
+        "nodeIds": [
+         "web_bucket"
+        ],
+        "todo": [
+         "버킷을 만들고 '퍼블릭 액세스 차단'을 켠 채로 둬요.",
+         "npm run build 결과 폴더의 파일을 업로드해요."
+        ],
+        "consolePath": "S3 > 버킷 만들기",
+        "warn": null
+       },
+       {
+        "id": "connect_cdn",
+        "title": "CloudFront 연결",
+        "desc": "CloudFront 배포를 만들어 버킷을 연결하면 HTTPS 주소가 생겨요.",
+        "nodeIds": [
+         "cdn",
+         "web_bucket"
+        ],
+        "todo": [
+         "원본으로 S3 버킷을 고르고 OAC(원본 접근 제어)를 만들어요.",
+         "안내에 나오는 버킷 정책을 S3 버킷에 붙여 넣어요."
+        ],
+        "consolePath": "CloudFront > 배포 생성",
+        "warn": "화면을 고친 뒤에는 캐시 무효화를 해야 바로 반영돼요."
+       }
+      ]
+     },
+     {
+      "key": "ops",
+      "title": "운영",
+      "sub": "4단계",
+      "intro": "장애를 사용자보다 먼저 알 수 있게 로그와 알람을 켜요.",
+      "steps": [
+       {
+        "id": "error_alarm",
+        "title": "오류 알람 설정",
+        "desc": "오류가 갑자기 늘면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [
+         "logs"
+        ],
+        "todo": [
+         "CloudWatch에서 백엔드 오류 수 지표로 알람을 만들어요.",
+         "5분 동안 오류가 5번 넘으면 이메일을 받게 해요."
+        ],
+        "consolePath": "CloudWatch > 경보 > 경보 생성",
+        "warn": null
+       }
+      ]
+     }
+    ],
+    "checklists": [
+     {
+      "key": "cost",
+      "title": "비용 알람이 왔을 때",
+      "items": [
+       "Cost Explorer에서 어느 서비스 비용이 늘었는지 확인해요.",
+       "평소보다 요청이 많은 시간대가 있는지 CloudWatch 지표로 확인해요.",
+       "쓰지 않는 리소스가 켜져 있으면 지워요."
+      ]
+     },
+     {
+      "key": "incident",
+      "title": "장애가 났을 때",
+      "items": [
+       "화면이 예전 버전으로 보이면 CloudFront 캐시 무효화(/*)를 실행해요.",
+       "API가 5xx 오류를 내면 CloudWatch Logs에서 최근 오류 로그를 확인해요.",
+       "요청이 429로 거부되면 스로틀링 지표를 확인하고 한도를 조정해요."
+      ]
+     }
+    ]
+   },
+   "id": "job_demo_balanced",
+   "monthlyCost": {
+    "currency": "KRW",
+    "total": 29802,
+    "totalUsd": 21.6,
+    "exchangeRate": 1380.0,
+    "exchangeRateDate": "2026-11-20",
+    "priceDate": "2026-11-20",
+    "freeTier": false,
+    "freeTierNote": "Lambda·CloudFront 항상 무료 한도를 빼고 계산했어요. 계산에서 빠진 항목은 합계에 포함되지 않았어요. (가입 크레딧은 반영하지 않았어요)",
+    "overBudget": false,
+    "items": [
+     {
+      "nodeId": "cdn",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 30만 건, 전송 5GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "web_bucket",
+      "amount": 35,
+      "amountUsd": 0.03,
+      "note": "저장 1GB 기준 (요청 요금 제외)"
+     },
+     {
+      "nodeId": "auth",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     },
+     {
+      "nodeId": "api_gw",
+      "amount": 966,
+      "amountUsd": 0.7,
+      "note": "REST API 요청 월 20만 건 기준"
+     },
+     {
+      "nodeId": "api_lambda",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 20만 건, 512MB·300ms 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "app_db",
+      "amount": 28801,
+      "amountUsd": 20.87,
+      "note": "db.t4g.micro 1대, 월 730시간, 스토리지 20GB 기준"
+     },
+     {
+      "nodeId": "logs",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     }
+    ]
+   }
+  },
+  {
+   "title": "컨테이너 기반 확장형 구성",
+   "summary": "ALB 뒤에 ECS Fargate 컨테이너를 두 가용 영역에 나눠 실행하고, RDS Multi-AZ와 ElastiCache로 장애와 트래픽 증가에 대비합니다. 안정성은 가장 높지만 고정 비용과 운영 난이도도 가장 높습니다.",
+   "difficulty": {
+    "level": 3,
+    "reason": "컨테이너·네트워크·캐시를 함께 다뤄야 해서 인프라 경험이 필요해요.",
+    "label": "어려움"
+   },
+   "architecture": {
+    "nodes": [
+     {
+      "id": "users",
+      "serviceType": "users",
+      "label": "사용자",
+      "groupId": null,
+      "role": "브라우저로 모집 공고를 보고 지원서를 내는 사람",
+      "reason": "모든 요청이 시작되는 지점이에요.",
+      "usage": null
+     },
+     {
+      "id": "cdn",
+      "serviceType": "cloudfront",
+      "label": "CDN",
+      "groupId": null,
+      "role": "웹 화면 전달과 HTTPS 제공",
+      "reason": "정적 파일 캐시로 서버 부하와 전송 비용을 줄입니다.",
+      "usage": {
+       "monthlyRequests": 300000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 5.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "web_bucket",
+      "serviceType": "s3",
+      "label": "웹 화면 저장소",
+      "groupId": "region_seoul",
+      "role": "React 빌드 파일 보관",
+      "reason": "정적 파일 보관 비용이 매우 낮습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "lb",
+      "serviceType": "alb",
+      "label": "로드밸런서",
+      "groupId": "public_subnet",
+      "role": "요청을 여러 컨테이너에 나눠 전달하고 상태 확인",
+      "reason": "컨테이너가 하나 죽어도 다른 컨테이너로 자동으로 보내 서비스가 멈추지 않습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": 730,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "nat",
+      "serviceType": "nat_gateway",
+      "label": "NAT 게이트웨이",
+      "groupId": "public_subnet",
+      "role": "프라이빗 서브넷 컨테이너의 외부 인터넷 접근",
+      "reason": "컨테이너를 외부에 노출하지 않으면서 외부 API 호출과 이미지 다운로드를 할 수 있습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 10.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": 730,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app",
+      "serviceType": "ecs_fargate",
+      "label": "API 컨테이너",
+      "groupId": "private_subnet",
+      "role": "API 서버 컨테이너 실행(2개 이상)",
+      "reason": "서버를 직접 관리하지 않으면서 상시 실행되는 컨테이너로 콜드 스타트 없이 응답합니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": 1024,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": 2,
+       "hoursPerMonth": 730,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "cache",
+      "serviceType": "elasticache",
+      "label": "캐시",
+      "groupId": "private_subnet",
+      "role": "자주 읽는 공고 목록 캐시",
+      "reason": "모집 기간에 같은 공고 조회가 몰릴 때 DB 부하를 줄입니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": "cache.t4g.micro",
+       "instanceCount": 1,
+       "hoursPerMonth": 730,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app_db",
+      "serviceType": "rds",
+      "label": "PostgreSQL DB (Multi-AZ)",
+      "groupId": "private_subnet",
+      "role": "회원·공고·지원서 저장, 장애 시 자동 전환",
+      "reason": "한 가용 영역에 장애가 나도 대기 DB로 자동 전환되어 데이터와 서비스가 유지됩니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 50.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": "db.t4g.small",
+       "instanceCount": 1,
+       "hoursPerMonth": 730,
+       "multiAz": true
+      }
+     },
+     {
+      "id": "logs",
+      "serviceType": "cloudwatch",
+      "label": "로그·알람",
+      "groupId": "region_seoul",
+      "role": "컨테이너 로그, 지표, 알람",
+      "reason": "장애 감지와 오토스케일링 기준 지표를 제공합니다.",
+      "usage": null
+     }
+    ],
+    "edges": [
+     {
+      "from": "users",
+      "to": "cdn",
+      "label": "웹 접속 (HTTPS)"
+     },
+     {
+      "from": "cdn",
+      "to": "web_bucket",
+      "label": "정적 파일"
+     },
+     {
+      "from": "users",
+      "to": "lb",
+      "label": "API 요청"
+     },
+     {
+      "from": "lb",
+      "to": "app",
+      "label": null
+     },
+     {
+      "from": "app",
+      "to": "cache",
+      "label": "캐시 조회"
+     },
+     {
+      "from": "app",
+      "to": "app_db",
+      "label": "SQL"
+     },
+     {
+      "from": "app",
+      "to": "nat",
+      "label": "외부 API 호출"
+     },
+     {
+      "from": "app",
+      "to": "logs",
+      "label": "로그·지표"
+     }
+    ],
+    "groups": [
+     {
+      "id": "region_seoul",
+      "kind": "region",
+      "label": "서울 리전 (ap-northeast-2)",
+      "parentId": null
+     },
+     {
+      "id": "vpc_main",
+      "kind": "vpc",
+      "label": "VPC (10.0.0.0/16)",
+      "parentId": "region_seoul"
+     },
+     {
+      "id": "public_subnet",
+      "kind": "public_subnet",
+      "label": "퍼블릭 서브넷 (2개 AZ)",
+      "parentId": "vpc_main"
+     },
+     {
+      "id": "private_subnet",
+      "kind": "private_subnet",
+      "label": "프라이빗 서브넷 (2개 AZ)",
+      "parentId": "vpc_main"
+     }
+    ]
+   },
+   "pros": [
+    "가용 영역 장애에도 서비스 유지",
+    "콜드 스타트 없이 일정한 응답 속도",
+    "사용자 10만 명 규모까지 구조 변경 없이 확장"
+   ],
+   "cons": [
+    "ALB·NAT·Multi-AZ로 고정 비용이 높음",
+    "컨테이너·네트워크 지식이 필요해 AWS 경험이 없는 팀에는 부담"
+   ],
+   "budgetNote": "고정 비용이 커서 월 5만 원 예산을 넘을 가능성이 높습니다. 서비스가 성장한 뒤 전환을 권장합니다.",
+   "scalingPath": [
+    "사용자 1만 명: 현재 구성 그대로 태스크 수만 조정",
+    "사용자 10만 명: RDS 읽기 전용 복제본, CloudFront로 API 캐시 확대"
+   ],
+   "tier": "scalable",
+   "operationsGuide": {
+    "phases": [
+     {
+      "key": "account",
+      "title": "계정 준비",
+      "sub": "1단계",
+      "intro": "리소스를 만들기 전에 계정을 안전하게 하고, 예산을 넘지 않게 알람부터 켜요.",
+      "steps": [
+       {
+        "id": "account_security",
+        "title": "AWS 계정 보안 설정",
+        "desc": "루트 계정이 털리면 모든 리소스가 위험해져요. 로그인 2단계 인증을 켜고 평소에는 별도 사용자로 작업해요.",
+        "nodeIds": [],
+        "todo": [
+         "루트 계정에 MFA(로그인 2단계 인증)를 켜요.",
+         "일상 작업용 IAM 사용자를 만들고 그 사용자로 다시 로그인해요."
+        ],
+        "consolePath": "IAM > 사용자 > 사용자 생성",
+        "warn": "루트 계정의 액세스 키는 만들지 마세요."
+       },
+       {
+        "id": "budget_alarm",
+        "title": "예산 알람 먼저 만들기",
+        "desc": "예상 밖 청구를 막으려고 월 예산의 80%에 이르면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [],
+        "todo": [
+         "AWS Budgets에서 월 비용 예산을 만들고, 금액에는 월 예산 5만 원을 달러로 바꾼 36(USD)을 넣어요.",
+         "예측 비용이 80%를 넘으면 이메일을 받도록 알림을 추가해요.",
+         "Billing 기본 설정에서 'AWS 프리 티어 사용 알림 수신'을 켜요."
+        ],
+        "consolePath": "Billing and Cost Management > Budgets > 예산 생성",
+        "warn": "알림 이메일 인증을 해야 알림이 와요."
+       }
+      ]
+     },
+     {
+      "key": "data",
+      "title": "데이터 저장소",
+      "sub": "2단계",
+      "intro": "백엔드가 쓸 데이터베이스를 먼저 만들어요.",
+      "steps": [
+       {
+        "id": "create_db",
+        "title": "데이터베이스 만들기",
+        "desc": "지원서 데이터를 저장할 데이터베이스를 만들어요.",
+        "nodeIds": [
+         "app_db"
+        ],
+        "todo": [
+         "설계도의 데이터베이스 서비스로 저장소를 만들어요.",
+         "자동 백업(또는 특정 시점 복구)을 켜요."
+        ],
+        "consolePath": null,
+        "warn": null
+       }
+      ]
+     },
+     {
+      "key": "web",
+      "title": "화면 배포",
+      "sub": "3단계",
+      "intro": "React 빌드 결과를 올리고 CloudFront로 전 세계에 빠르게 전달해요.",
+      "steps": [
+       {
+        "id": "upload_web",
+        "title": "웹 화면 업로드",
+        "desc": "빌드한 정적 파일을 S3 버킷에 올려요.",
+        "nodeIds": [
+         "web_bucket"
+        ],
+        "todo": [
+         "버킷을 만들고 '퍼블릭 액세스 차단'을 켠 채로 둬요.",
+         "npm run build 결과 폴더의 파일을 업로드해요."
+        ],
+        "consolePath": "S3 > 버킷 만들기",
+        "warn": null
+       },
+       {
+        "id": "connect_cdn",
+        "title": "CloudFront 연결",
+        "desc": "CloudFront 배포를 만들어 버킷을 연결하면 HTTPS 주소가 생겨요.",
+        "nodeIds": [
+         "cdn",
+         "web_bucket"
+        ],
+        "todo": [
+         "원본으로 S3 버킷을 고르고 OAC(원본 접근 제어)를 만들어요.",
+         "안내에 나오는 버킷 정책을 S3 버킷에 붙여 넣어요."
+        ],
+        "consolePath": "CloudFront > 배포 생성",
+        "warn": "화면을 고친 뒤에는 캐시 무효화를 해야 바로 반영돼요."
+       }
+      ]
+     },
+     {
+      "key": "ops",
+      "title": "운영",
+      "sub": "4단계",
+      "intro": "장애를 사용자보다 먼저 알 수 있게 로그와 알람을 켜요.",
+      "steps": [
+       {
+        "id": "error_alarm",
+        "title": "오류 알람 설정",
+        "desc": "오류가 갑자기 늘면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [
+         "logs"
+        ],
+        "todo": [
+         "CloudWatch에서 백엔드 오류 수 지표로 알람을 만들어요.",
+         "5분 동안 오류가 5번 넘으면 이메일을 받게 해요."
+        ],
+        "consolePath": "CloudWatch > 경보 > 경보 생성",
+        "warn": null
+       }
+      ]
+     }
+    ],
+    "checklists": [
+     {
+      "key": "cost",
+      "title": "비용 알람이 왔을 때",
+      "items": [
+       "Cost Explorer에서 어느 서비스 비용이 늘었는지 확인해요.",
+       "평소보다 요청이 많은 시간대가 있는지 CloudWatch 지표로 확인해요.",
+       "쓰지 않는 리소스가 켜져 있으면 지워요."
+      ]
+     },
+     {
+      "key": "incident",
+      "title": "장애가 났을 때",
+      "items": [
+       "화면이 예전 버전으로 보이면 CloudFront 캐시 무효화(/*)를 실행해요.",
+       "API가 5xx 오류를 내면 CloudWatch Logs에서 최근 오류 로그를 확인해요.",
+       "요청이 429로 거부되면 스로틀링 지표를 확인하고 한도를 조정해요."
+      ]
+     }
+    ]
+   },
+   "id": "job_demo_scalable",
+   "monthlyCost": {
+    "currency": "KRW",
+    "total": 228971,
+    "totalUsd": 165.92,
+    "exchangeRate": 1380.0,
+    "exchangeRateDate": "2026-11-20",
+    "priceDate": "2026-11-20",
+    "freeTier": false,
+    "freeTierNote": "CloudFront 항상 무료 한도를 빼고 계산했어요. 계산에서 빠진 항목은 합계에 포함되지 않았어요. (가입 크레딧은 반영하지 않았어요)",
+    "overBudget": true,
+    "items": [
+     {
+      "nodeId": "cdn",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 30만 건, 전송 5GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "web_bucket",
+      "amount": 35,
+      "amountUsd": 0.03,
+      "note": "저장 1GB 기준 (요청 요금 제외)"
+     },
+     {
+      "nodeId": "lb",
+      "amount": 22667,
+      "amountUsd": 16.43,
+      "note": "월 730시간 기준 (처리량(LCU) 요금 제외)"
+     },
+     {
+      "nodeId": "nat",
+      "amount": 60251,
+      "amountUsd": 43.66,
+      "note": "1개, 월 730시간, 처리 10GB 기준"
+     },
+     {
+      "nodeId": "app",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     },
+     {
+      "nodeId": "cache",
+      "amount": 25185,
+      "amountUsd": 18.25,
+      "note": "cache.t4g.micro 1대, 월 730시간 기준"
+     },
+     {
+      "nodeId": "app_db",
+      "amount": 120833,
+      "amountUsd": 87.56,
+      "note": "db.t4g.small 1대, 월 730시간, 스토리지 50GB 기준 (Multi-AZ)"
+     },
+     {
+      "nodeId": "logs",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     }
+    ]
+   }
+  }
+ ],
+ "failures": [],
+ "error": null
+},
+partialFailed: {
+ "jobId": "job_demo",
+ "status": "completed",
+ "designs": [
+  {
+   "title": "서버리스 최소비용 구성",
+   "summary": "정적 화면은 S3와 CloudFront로, API는 API Gateway와 Lambda로, 데이터는 DynamoDB에 저장합니다. 사용한 만큼만 비용이 나와 동시 사용자 100명 수준에서는 대부분 Free Tier 안에서 운영됩니다.",
+   "difficulty": {
+    "level": 1,
+    "reason": "서버를 직접 관리하지 않아 콘솔에서 몇 번의 설정만으로 운영할 수 있어요.",
+    "label": "쉬움"
+   },
+   "architecture": {
+    "nodes": [
+     {
+      "id": "users",
+      "serviceType": "users",
+      "label": "사용자",
+      "groupId": null,
+      "role": "브라우저로 모집 공고를 보고 지원서를 내는 사람",
+      "reason": "모든 요청이 시작되는 지점이에요.",
+      "usage": null
+     },
+     {
+      "id": "cdn",
+      "serviceType": "cloudfront",
+      "label": "CDN",
+      "groupId": null,
+      "role": "웹 화면을 전 세계에 빠르게 전달하고 HTTPS를 제공",
+      "reason": "정적 파일을 캐시해 S3 요청과 전송 비용을 줄이고, 무료 HTTPS 인증서를 붙일 수 있습니다.",
+      "usage": {
+       "monthlyRequests": 300000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 5.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "web_bucket",
+      "serviceType": "s3",
+      "label": "웹 화면 저장소",
+      "groupId": "region_seoul",
+      "role": "빌드한 React 정적 파일 보관",
+      "reason": "서버 없이 정적 파일을 저렴하게 보관할 수 있어 바이브 코딩으로 만든 프론트를 그대로 올리기 좋습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_gw",
+      "serviceType": "api_gateway",
+      "label": "API 입구",
+      "groupId": "region_seoul",
+      "role": "브라우저의 API 요청을 받아 Lambda로 전달",
+      "reason": "요청 수만큼만 과금되고 인증·요청 제한 기능이 기본 제공됩니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_lambda",
+      "serviceType": "lambda",
+      "label": "API 처리 함수",
+      "groupId": "region_seoul",
+      "role": "지원서 제출·조회 등 비즈니스 로직 실행",
+      "reason": "요청이 없을 때는 비용이 0원이고 서버 패치·확장을 AWS가 대신합니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": 200,
+       "memoryMb": 256,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app_db",
+      "serviceType": "dynamodb",
+      "label": "지원서 DB",
+      "groupId": "region_seoul",
+      "role": "동아리 공고와 지원서 저장",
+      "reason": "온디맨드 모드는 읽기·쓰기만큼만 과금되고 서버 관리가 없어 AWS 경험이 없는 팀에 적합합니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": 500000,
+       "monthlyWrites": 50000,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "logs",
+      "serviceType": "cloudwatch",
+      "label": "로그·알람",
+      "groupId": "region_seoul",
+      "role": "Lambda 로그 수집과 오류 알람",
+      "reason": "Lambda 로그가 자동으로 쌓여 장애 원인을 바로 찾을 수 있습니다.",
+      "usage": null
+     }
+    ],
+    "edges": [
+     {
+      "from": "users",
+      "to": "cdn",
+      "label": "웹 접속 (HTTPS)"
+     },
+     {
+      "from": "cdn",
+      "to": "web_bucket",
+      "label": "정적 파일"
+     },
+     {
+      "from": "users",
+      "to": "api_gw",
+      "label": "API 요청"
+     },
+     {
+      "from": "api_gw",
+      "to": "api_lambda",
+      "label": null
+     },
+     {
+      "from": "api_lambda",
+      "to": "app_db",
+      "label": "지원서 읽기/쓰기"
+     },
+     {
+      "from": "api_lambda",
+      "to": "logs",
+      "label": "로그"
+     }
+    ],
+    "groups": [
+     {
+      "id": "region_seoul",
+      "kind": "region",
+      "label": "서울 리전 (ap-northeast-2)",
+      "parentId": null
+     }
+    ]
+   },
+   "pros": [
+    "트래픽이 적을 때 비용이 거의 0원",
+    "서버 관리가 필요 없음",
+    "모집 기간 트래픽 급증에 자동 대응"
+   ],
+   "cons": [
+    "DynamoDB는 SQL처럼 자유로운 조회가 어려움",
+    "Lambda 콜드 스타트로 첫 응답이 느릴 수 있음"
+   ],
+   "budgetNote": "월 5만 원 예산보다 훨씬 낮은 수준으로 운영할 수 있고 대부분 Free Tier 범위입니다.",
+   "scalingPath": [
+    "사용자 1만 명: DynamoDB 키 설계 점검, CloudFront 캐시 정책 조정",
+    "사용자 10만 명: Lambda 동시 실행 한도 상향 요청, 읽기 많은 데이터에 캐시 추가"
+   ],
+   "tier": "minimal_cost",
+   "operationsGuide": {
+    "phases": [
+     {
+      "key": "account",
+      "title": "계정 준비",
+      "sub": "1단계",
+      "intro": "리소스를 만들기 전에 계정을 안전하게 하고, 예산을 넘지 않게 알람부터 켜요.",
+      "steps": [
+       {
+        "id": "account_security",
+        "title": "AWS 계정 보안 설정",
+        "desc": "루트 계정이 털리면 모든 리소스가 위험해져요. 로그인 2단계 인증을 켜고 평소에는 별도 사용자로 작업해요.",
+        "nodeIds": [],
+        "todo": [
+         "루트 계정에 MFA(로그인 2단계 인증)를 켜요.",
+         "일상 작업용 IAM 사용자를 만들고 그 사용자로 다시 로그인해요."
+        ],
+        "consolePath": "IAM > 사용자 > 사용자 생성",
+        "warn": "루트 계정의 액세스 키는 만들지 마세요."
+       },
+       {
+        "id": "budget_alarm",
+        "title": "예산 알람 먼저 만들기",
+        "desc": "예상 밖 청구를 막으려고 월 예산의 80%에 이르면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [],
+        "todo": [
+         "AWS Budgets에서 월 비용 예산을 만들고, 금액에는 월 예산 5만 원을 달러로 바꾼 36(USD)을 넣어요.",
+         "예측 비용이 80%를 넘으면 이메일을 받도록 알림을 추가해요.",
+         "Billing 기본 설정에서 'AWS 프리 티어 사용 알림 수신'을 켜요."
+        ],
+        "consolePath": "Billing and Cost Management > Budgets > 예산 생성",
+        "warn": "알림 이메일 인증을 해야 알림이 와요."
+       }
+      ]
+     },
+     {
+      "key": "data",
+      "title": "데이터 저장소",
+      "sub": "2단계",
+      "intro": "백엔드가 쓸 데이터베이스를 먼저 만들어요.",
+      "steps": [
+       {
+        "id": "create_db",
+        "title": "데이터베이스 만들기",
+        "desc": "지원서 데이터를 저장할 데이터베이스를 만들어요.",
+        "nodeIds": [
+         "app_db"
+        ],
+        "todo": [
+         "설계도의 데이터베이스 서비스로 저장소를 만들어요.",
+         "자동 백업(또는 특정 시점 복구)을 켜요."
+        ],
+        "consolePath": null,
+        "warn": null
+       }
+      ]
+     },
+     {
+      "key": "web",
+      "title": "화면 배포",
+      "sub": "3단계",
+      "intro": "React 빌드 결과를 올리고 CloudFront로 전 세계에 빠르게 전달해요.",
+      "steps": [
+       {
+        "id": "upload_web",
+        "title": "웹 화면 업로드",
+        "desc": "빌드한 정적 파일을 S3 버킷에 올려요.",
+        "nodeIds": [
+         "web_bucket"
+        ],
+        "todo": [
+         "버킷을 만들고 '퍼블릭 액세스 차단'을 켠 채로 둬요.",
+         "npm run build 결과 폴더의 파일을 업로드해요."
+        ],
+        "consolePath": "S3 > 버킷 만들기",
+        "warn": null
+       },
+       {
+        "id": "connect_cdn",
+        "title": "CloudFront 연결",
+        "desc": "CloudFront 배포를 만들어 버킷을 연결하면 HTTPS 주소가 생겨요.",
+        "nodeIds": [
+         "cdn",
+         "web_bucket"
+        ],
+        "todo": [
+         "원본으로 S3 버킷을 고르고 OAC(원본 접근 제어)를 만들어요.",
+         "안내에 나오는 버킷 정책을 S3 버킷에 붙여 넣어요."
+        ],
+        "consolePath": "CloudFront > 배포 생성",
+        "warn": "화면을 고친 뒤에는 캐시 무효화를 해야 바로 반영돼요."
+       }
+      ]
+     },
+     {
+      "key": "ops",
+      "title": "운영",
+      "sub": "4단계",
+      "intro": "장애를 사용자보다 먼저 알 수 있게 로그와 알람을 켜요.",
+      "steps": [
+       {
+        "id": "error_alarm",
+        "title": "오류 알람 설정",
+        "desc": "오류가 갑자기 늘면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [
+         "logs"
+        ],
+        "todo": [
+         "CloudWatch에서 백엔드 오류 수 지표로 알람을 만들어요.",
+         "5분 동안 오류가 5번 넘으면 이메일을 받게 해요."
+        ],
+        "consolePath": "CloudWatch > 경보 > 경보 생성",
+        "warn": null
+       }
+      ]
+     }
+    ],
+    "checklists": [
+     {
+      "key": "cost",
+      "title": "비용 알람이 왔을 때",
+      "items": [
+       "Cost Explorer에서 어느 서비스 비용이 늘었는지 확인해요.",
+       "평소보다 요청이 많은 시간대가 있는지 CloudWatch 지표로 확인해요.",
+       "쓰지 않는 리소스가 켜져 있으면 지워요."
+      ]
+     },
+     {
+      "key": "incident",
+      "title": "장애가 났을 때",
+      "items": [
+       "화면이 예전 버전으로 보이면 CloudFront 캐시 무효화(/*)를 실행해요.",
+       "API가 5xx 오류를 내면 CloudWatch Logs에서 최근 오류 로그를 확인해요.",
+       "요청이 429로 거부되면 스로틀링 지표를 확인하고 한도를 조정해요."
+      ]
+     }
+    ]
+   },
+   "id": "job_demo_minimal_cost",
+   "monthlyCost": {
+    "currency": "KRW",
+    "total": 1147,
+    "totalUsd": 0.83,
+    "exchangeRate": 1380.0,
+    "exchangeRateDate": "2026-11-20",
+    "priceDate": "2026-11-20",
+    "freeTier": false,
+    "freeTierNote": "Lambda·CloudFront·DynamoDB 항상 무료 한도를 빼고 계산했어요. 계산에서 빠진 항목은 합계에 포함되지 않았어요. (가입 크레딧은 반영하지 않았어요)",
+    "overBudget": false,
+    "items": [
+     {
+      "nodeId": "cdn",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 30만 건, 전송 5GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "web_bucket",
+      "amount": 35,
+      "amountUsd": 0.03,
+      "note": "저장 1GB 기준 (요청 요금 제외)"
+     },
+     {
+      "nodeId": "api_gw",
+      "amount": 966,
+      "amountUsd": 0.7,
+      "note": "REST API 요청 월 20만 건 기준"
+     },
+     {
+      "nodeId": "api_lambda",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 20만 건, 256MB·200ms 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "app_db",
+      "amount": 146,
+      "amountUsd": 0.11,
+      "note": "온디맨드 읽기 월 50만 건, 쓰기 5만 건, 저장 1GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "logs",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     }
+    ]
+   }
+  },
+  {
+   "title": "서버리스 + 관계형 DB 균형 구성",
+   "summary": "API는 Lambda로 유지하되 데이터는 익숙한 SQL을 쓸 수 있는 RDS(PostgreSQL)에 저장합니다. 로그인은 Cognito로 처리해 직접 인증을 구현하지 않아도 됩니다.",
+   "difficulty": {
+    "level": 2,
+    "reason": "관계형 DB와 VPC 설정을 이해해야 해서 최소비용안보다 손이 조금 더 가요.",
+    "label": "보통"
+   },
+   "architecture": {
+    "nodes": [
+     {
+      "id": "users",
+      "serviceType": "users",
+      "label": "사용자",
+      "groupId": null,
+      "role": "브라우저로 모집 공고를 보고 지원서를 내는 사람",
+      "reason": "모든 요청이 시작되는 지점이에요.",
+      "usage": null
+     },
+     {
+      "id": "cdn",
+      "serviceType": "cloudfront",
+      "label": "CDN",
+      "groupId": null,
+      "role": "웹 화면 전달과 HTTPS 제공",
+      "reason": "정적 파일을 캐시해 빠르고 저렴하게 전달합니다.",
+      "usage": {
+       "monthlyRequests": 300000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": 5.0,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "web_bucket",
+      "serviceType": "s3",
+      "label": "웹 화면 저장소",
+      "groupId": "region_seoul",
+      "role": "React 빌드 파일 보관",
+      "reason": "정적 파일 보관 비용이 매우 낮습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 1.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "auth",
+      "serviceType": "cognito",
+      "label": "회원 인증",
+      "groupId": "region_seoul",
+      "role": "회원가입·로그인·토큰 발급",
+      "reason": "비밀번호 저장과 토큰 관리를 직접 구현하지 않아도 되어 보안 사고 위험이 줄어듭니다.",
+      "usage": null
+     },
+     {
+      "id": "api_gw",
+      "serviceType": "api_gateway",
+      "label": "API 입구",
+      "groupId": "region_seoul",
+      "role": "API 요청 수신과 토큰 검증",
+      "reason": "Cognito 토큰 검증을 설정만으로 붙일 수 있습니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "api_lambda",
+      "serviceType": "lambda",
+      "label": "API 처리 함수",
+      "groupId": "private_a",
+      "role": "비즈니스 로직 실행과 DB 접근",
+      "reason": "서버 관리 없이 API를 운영하면서 VPC 안의 RDS에 안전하게 접근합니다.",
+      "usage": {
+       "monthlyRequests": 200000,
+       "avgDurationMs": 300,
+       "memoryMb": 512,
+       "storageGb": null,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": null,
+       "instanceCount": null,
+       "hoursPerMonth": null,
+       "multiAz": null
+      }
+     },
+     {
+      "id": "app_db",
+      "serviceType": "rds",
+      "label": "PostgreSQL DB",
+      "groupId": "private_a",
+      "role": "회원·공고·지원서 저장",
+      "reason": "SQL로 자유롭게 조회할 수 있고 바이브 코딩 도구가 만든 ORM 코드를 그대로 쓸 수 있습니다.",
+      "usage": {
+       "monthlyRequests": null,
+       "avgDurationMs": null,
+       "memoryMb": null,
+       "storageGb": 20.0,
+       "dataTransferOutGb": null,
+       "monthlyReads": null,
+       "monthlyWrites": null,
+       "instanceType": "db.t4g.micro",
+       "instanceCount": 1,
+       "hoursPerMonth": 730,
+       "multiAz": false
+      }
+     },
+     {
+      "id": "logs",
+      "serviceType": "cloudwatch",
+      "label": "로그·알람",
+      "groupId": "region_seoul",
+      "role": "로그 수집과 오류·비용 알람",
+      "reason": "장애 원인 추적과 알람을 한 곳에서 관리합니다.",
+      "usage": null
+     }
+    ],
+    "edges": [
+     {
+      "from": "users",
+      "to": "cdn",
+      "label": "웹 접속 (HTTPS)"
+     },
+     {
+      "from": "cdn",
+      "to": "web_bucket",
+      "label": "정적 파일"
+     },
+     {
+      "from": "users",
+      "to": "auth",
+      "label": "로그인"
+     },
+     {
+      "from": "users",
+      "to": "api_gw",
+      "label": "API 요청 (토큰)"
+     },
+     {
+      "from": "api_gw",
+      "to": "auth",
+      "label": "토큰 검증"
+     },
+     {
+      "from": "api_gw",
+      "to": "api_lambda",
+      "label": null
+     },
+     {
+      "from": "api_lambda",
+      "to": "app_db",
+      "label": "SQL"
+     },
+     {
+      "from": "api_lambda",
+      "to": "logs",
+      "label": "로그"
+     }
+    ],
+    "groups": [
+     {
+      "id": "region_seoul",
+      "kind": "region",
+      "label": "서울 리전 (ap-northeast-2)",
+      "parentId": null
+     },
+     {
+      "id": "vpc_main",
+      "kind": "vpc",
+      "label": "VPC (10.0.0.0/16)",
+      "parentId": "region_seoul"
+     },
+     {
+      "id": "private_a",
+      "kind": "private_subnet",
+      "label": "프라이빗 서브넷",
+      "parentId": "vpc_main"
+     }
+    ]
+   },
+   "pros": [
+    "익숙한 SQL과 ORM 사용 가능",
+    "회원 인증을 관리형 서비스로 해결",
+    "서버 관리 부담이 여전히 낮음"
+   ],
+   "cons": [
+    "RDS 때문에 트래픽이 없어도 월 고정 비용 발생",
+    "VPC 구성으로 설정 난이도가 조금 올라감"
+   ],
+   "budgetNote": "RDS 고정 비용이 생기지만 월 5만 원 예산 안에서 여유 있게 운영할 수 있는 수준입니다.",
+   "scalingPath": [
+    "사용자 1만 명: RDS Proxy 도입, 인스턴스 한 단계 상향",
+    "사용자 10만 명: RDS Multi-AZ 전환과 읽기 전용 복제본 추가"
+   ],
+   "tier": "balanced",
+   "operationsGuide": {
+    "phases": [
+     {
+      "key": "account",
+      "title": "계정 준비",
+      "sub": "1단계",
+      "intro": "리소스를 만들기 전에 계정을 안전하게 하고, 예산을 넘지 않게 알람부터 켜요.",
+      "steps": [
+       {
+        "id": "account_security",
+        "title": "AWS 계정 보안 설정",
+        "desc": "루트 계정이 털리면 모든 리소스가 위험해져요. 로그인 2단계 인증을 켜고 평소에는 별도 사용자로 작업해요.",
+        "nodeIds": [],
+        "todo": [
+         "루트 계정에 MFA(로그인 2단계 인증)를 켜요.",
+         "일상 작업용 IAM 사용자를 만들고 그 사용자로 다시 로그인해요."
+        ],
+        "consolePath": "IAM > 사용자 > 사용자 생성",
+        "warn": "루트 계정의 액세스 키는 만들지 마세요."
+       },
+       {
+        "id": "budget_alarm",
+        "title": "예산 알람 먼저 만들기",
+        "desc": "예상 밖 청구를 막으려고 월 예산의 80%에 이르면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [],
+        "todo": [
+         "AWS Budgets에서 월 비용 예산을 만들고, 금액에는 월 예산 5만 원을 달러로 바꾼 36(USD)을 넣어요.",
+         "예측 비용이 80%를 넘으면 이메일을 받도록 알림을 추가해요.",
+         "Billing 기본 설정에서 'AWS 프리 티어 사용 알림 수신'을 켜요."
+        ],
+        "consolePath": "Billing and Cost Management > Budgets > 예산 생성",
+        "warn": "알림 이메일 인증을 해야 알림이 와요."
+       }
+      ]
+     },
+     {
+      "key": "data",
+      "title": "데이터 저장소",
+      "sub": "2단계",
+      "intro": "백엔드가 쓸 데이터베이스를 먼저 만들어요.",
+      "steps": [
+       {
+        "id": "create_db",
+        "title": "데이터베이스 만들기",
+        "desc": "지원서 데이터를 저장할 데이터베이스를 만들어요.",
+        "nodeIds": [
+         "app_db"
+        ],
+        "todo": [
+         "설계도의 데이터베이스 서비스로 저장소를 만들어요.",
+         "자동 백업(또는 특정 시점 복구)을 켜요."
+        ],
+        "consolePath": null,
+        "warn": null
+       }
+      ]
+     },
+     {
+      "key": "web",
+      "title": "화면 배포",
+      "sub": "3단계",
+      "intro": "React 빌드 결과를 올리고 CloudFront로 전 세계에 빠르게 전달해요.",
+      "steps": [
+       {
+        "id": "upload_web",
+        "title": "웹 화면 업로드",
+        "desc": "빌드한 정적 파일을 S3 버킷에 올려요.",
+        "nodeIds": [
+         "web_bucket"
+        ],
+        "todo": [
+         "버킷을 만들고 '퍼블릭 액세스 차단'을 켠 채로 둬요.",
+         "npm run build 결과 폴더의 파일을 업로드해요."
+        ],
+        "consolePath": "S3 > 버킷 만들기",
+        "warn": null
+       },
+       {
+        "id": "connect_cdn",
+        "title": "CloudFront 연결",
+        "desc": "CloudFront 배포를 만들어 버킷을 연결하면 HTTPS 주소가 생겨요.",
+        "nodeIds": [
+         "cdn",
+         "web_bucket"
+        ],
+        "todo": [
+         "원본으로 S3 버킷을 고르고 OAC(원본 접근 제어)를 만들어요.",
+         "안내에 나오는 버킷 정책을 S3 버킷에 붙여 넣어요."
+        ],
+        "consolePath": "CloudFront > 배포 생성",
+        "warn": "화면을 고친 뒤에는 캐시 무효화를 해야 바로 반영돼요."
+       }
+      ]
+     },
+     {
+      "key": "ops",
+      "title": "운영",
+      "sub": "4단계",
+      "intro": "장애를 사용자보다 먼저 알 수 있게 로그와 알람을 켜요.",
+      "steps": [
+       {
+        "id": "error_alarm",
+        "title": "오류 알람 설정",
+        "desc": "오류가 갑자기 늘면 이메일로 알려 주는 알람을 만들어요.",
+        "nodeIds": [
+         "logs"
+        ],
+        "todo": [
+         "CloudWatch에서 백엔드 오류 수 지표로 알람을 만들어요.",
+         "5분 동안 오류가 5번 넘으면 이메일을 받게 해요."
+        ],
+        "consolePath": "CloudWatch > 경보 > 경보 생성",
+        "warn": null
+       }
+      ]
+     }
+    ],
+    "checklists": [
+     {
+      "key": "cost",
+      "title": "비용 알람이 왔을 때",
+      "items": [
+       "Cost Explorer에서 어느 서비스 비용이 늘었는지 확인해요.",
+       "평소보다 요청이 많은 시간대가 있는지 CloudWatch 지표로 확인해요.",
+       "쓰지 않는 리소스가 켜져 있으면 지워요."
+      ]
+     },
+     {
+      "key": "incident",
+      "title": "장애가 났을 때",
+      "items": [
+       "화면이 예전 버전으로 보이면 CloudFront 캐시 무효화(/*)를 실행해요.",
+       "API가 5xx 오류를 내면 CloudWatch Logs에서 최근 오류 로그를 확인해요.",
+       "요청이 429로 거부되면 스로틀링 지표를 확인하고 한도를 조정해요."
+      ]
+     }
+    ]
+   },
+   "id": "job_demo_balanced",
+   "monthlyCost": {
+    "currency": "KRW",
+    "total": 29802,
+    "totalUsd": 21.6,
+    "exchangeRate": 1380.0,
+    "exchangeRateDate": "2026-11-20",
+    "priceDate": "2026-11-20",
+    "freeTier": false,
+    "freeTierNote": "Lambda·CloudFront 항상 무료 한도를 빼고 계산했어요. 계산에서 빠진 항목은 합계에 포함되지 않았어요. (가입 크레딧은 반영하지 않았어요)",
+    "overBudget": false,
+    "items": [
+     {
+      "nodeId": "cdn",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 30만 건, 전송 5GB 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "web_bucket",
+      "amount": 35,
+      "amountUsd": 0.03,
+      "note": "저장 1GB 기준 (요청 요금 제외)"
+     },
+     {
+      "nodeId": "auth",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     },
+     {
+      "nodeId": "api_gw",
+      "amount": 966,
+      "amountUsd": 0.7,
+      "note": "REST API 요청 월 20만 건 기준"
+     },
+     {
+      "nodeId": "api_lambda",
+      "amount": 0,
+      "amountUsd": 0.0,
+      "note": "요청 월 20만 건, 512MB·300ms 기준 · 무료 한도 적용"
+     },
+     {
+      "nodeId": "app_db",
+      "amount": 28801,
+      "amountUsd": 20.87,
+      "note": "db.t4g.micro 1대, 월 730시간, 스토리지 20GB 기준"
+     },
+     {
+      "nodeId": "logs",
+      "amount": null,
+      "amountUsd": null,
+      "note": "비용 계산 대상이 아니에요"
+     }
+    ]
+   }
+  }
+ ],
+ "failures": [
+  {
+   "tier": "scalable",
+   "reason": "LLM_INVALID_OUTPUT"
+  }
+ ],
+ "error": null
+},
+failed: {
+ "jobId": "job_demo",
+ "status": "failed",
+ "designs": [],
+ "failures": [
+  {
+   "tier": "minimal_cost",
+   "reason": "LLM_RATE_LIMITED"
+  },
+  {
+   "tier": "balanced",
+   "reason": "LLM_RATE_LIMITED"
+  },
+  {
+   "tier": "scalable",
+   "reason": "LLM_RATE_LIMITED"
+  }
+ ],
+ "error": {
+  "code": "RATE_LIMITED",
+  "message": "요청이 많아요. 잠시 후 다시 시도해 주세요.",
+  "retryable": true,
+  "requestId": "job_demo"
+ }
+}
+};
