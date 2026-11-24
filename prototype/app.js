@@ -159,7 +159,7 @@
     tx: 0, ty: 0, scale: 1,
     selected: null, focus: new Set(),
     tab: null, openStep: null,
-    edit: false, deployed: false, link: false, linkFrom: null,
+    edit: false, deployed: false, selEdge: null,
     done: new Set(),
   };
   try { JSON.parse(localStorage.getItem('archimate-done') || '[]').forEach(id => state.done.add(id)); } catch {}
@@ -169,6 +169,7 @@
   const $ = s => document.querySelector(s);
   const canvas = $('#canvas'), world = $('#world'), nodesEl = $('#nodes'), edgesEl = $('#edges');
   const panelBody = $('#panelBody'), tabsEl = $('#tabs');
+  const edgeDelEl = $('#edgeDel'), linkHandle = $('#linkHandle');
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const svg = icon => `<svg viewBox="0 0 24 24">${ICON[icon]}</svg>`;
 
@@ -194,7 +195,7 @@
       el.dataset.id = n.id;
       el.style.cssText = `left:${n.x}px;top:${n.y}px;--c:${cat.c}`;
       el.title = n.role ? `${n.label} — ${n.role}` : n.label;
-      el.innerHTML = `<div class="tile">${svg(t.icon)}</div><div class="name">${esc(n.label)}</div><div class="cat">${t.name}</div><i class="port"></i>`;
+      el.innerHTML = `<div class="tile">${svg(t.icon)}</div><div class="name">${esc(n.label)}</div><div class="cat">${t.name}</div><i class="port"></i>${isCustom ? '<button class="node-del" title="삭제 (Delete)" aria-label="서비스 삭제">✕</button>' : ''}`;
       nodesEl.appendChild(el);
       n.el = el;
     });
@@ -215,31 +216,44 @@
   }
 
   function renderEdges() {
-    const f = state.focus, sel = state.selected;
+    const f = state.focus, sel = state.selected, se = state.selEdge;
     const hit = (a, b) => sel ? (a === sel || b === sel) : (f.has(a) && f.has(b));
     edgesEl.classList.toggle('dim', !!sel || f.size > 0);
-    edgesEl.innerHTML = edges.filter(([a, b]) => byId[a] && byId[b]).map(([a, b, label]) => {
-      const on = hit(a, b);
-      return `<path${on ? ' class="hl"' : ''} d="${route(byId[a], byId[b])}"/>` + (label ? edgeLabel(byId[a], byId[b], label, on) : '');
+    edgesEl.innerHTML = edges.map(([a, b, label], i) => {
+      if (!byId[a] || !byId[b]) return '';
+      const on = hit(a, b), isSel = !!se && se.a === a && se.b === b, d = route(byId[a], byId[b]);
+      return `<path class="${on ? 'hl ' : ''}${isSel ? 'sel' : ''}" d="${d}"/>`
+        + (label ? edgeLabel(byId[a], byId[b], label, on) : '')
+        + (isCustom ? `<path class="edge-hit" data-i="${i}" d="${d}"/>` : '');
     }).join('');
+    placeEdgeDel();
   }
-  // 선 가운데 부분에 연결 설명(label)을 쓴다
-  function edgeLabel(a, b, text, on) {
+  // 선 가운데 지점 (연결 설명과 연결 삭제 버튼 위치)
+  function edgeMid(a, b) {
     const ac = { x: a.x + NW / 2, y: a.y + NH / 2 }, bc = { x: b.x + NW / 2, y: b.y + NH / 2 };
     const dx = bc.x - ac.x, dy = bc.y - ac.y;
-    let x, y;
     if (Math.abs(dx) >= Math.abs(dy)) {
       const sx = dx > 0 ? a.x + NW : a.x, tx = dx > 0 ? b.x : b.x + NW;
-      x = Math.round((sx + tx) / 2); y = Math.abs(dy) > 14 ? (ac.y + bc.y) / 2 : ac.y - 5;
-    } else { x = (ac.x + bc.x) / 2; y = Math.round(((dy > 0 ? a.y + NH : a.y) + (dy > 0 ? b.y : b.y + NH)) / 2); }
+      return { x: Math.round((sx + tx) / 2), y: Math.abs(dy) > 14 ? (ac.y + bc.y) / 2 : ac.y - 5 };
+    }
+    return { x: (ac.x + bc.x) / 2, y: Math.round(((dy > 0 ? a.y + NH : a.y) + (dy > 0 ? b.y : b.y + NH)) / 2) };
+  }
+  function edgeLabel(a, b, text, on) {
+    const { x, y } = edgeMid(a, b);
     return `<text class="edge-label${on ? ' hl' : ''}" x="${x}" y="${y}" text-anchor="middle">${esc(text)}</text>`;
+  }
+  // 선택한 연결선 가운데에 빨간 삭제 버튼을 놓는다
+  function placeEdgeDel() {
+    const se = state.selEdge, a = se && byId[se.a], b = se && byId[se.b];
+    if (!isCustom || !a || !b || !edges.some(e => e[0] === se.a && e[1] === se.b)) { edgeDelEl.hidden = true; if (se) state.selEdge = null; return; }
+    const m = edgeMid(a, b);
+    edgeDelEl.style.left = m.x + 'px'; edgeDelEl.style.top = m.y + 'px'; edgeDelEl.hidden = false;
   }
 
   function paintHighlight() {
     nodes.forEach(n => {
       n.el.classList.toggle('selected', n.id === state.selected);
       n.el.classList.toggle('focus', state.focus.has(n.id));
-      n.el.classList.toggle('link-source', n.id === state.linkFrom);
       n.el.classList.toggle('deployed', state.deployed && n.type !== 'users');
     });
     nodesEl.classList.toggle('dim', state.focus.size > 0);
@@ -325,23 +339,27 @@
   // ---------- Pointer: pan / drag / select ----------
   let drag = null;
   canvas.addEventListener('pointerdown', e => {
-    if (e.target.closest('.topbar, .custom-tools, .zoom, .chat, .chat-fab')) return;
+    if (e.target.closest('.topbar, .custom-tools, .zoom, .chat, .chat-fab, .node-del, .edge-del')) return;
     canvas.classList.remove('view-anim');
+    updateHover(e);
+    if (hoverLink && canLink()) { startLink(e); return; }   // 블록 모서리에서 끌기 시작
     const nodeEl = e.target.closest('.node');
     if (nodeEl) {
       const n = byId[nodeEl.dataset.id];
       drag = { kind: 'node', n, sx: e.clientX, sy: e.clientY, ox: n.x, oy: n.y, moved: false };
     } else {
-      drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, ox: state.tx, oy: state.ty, moved: false };
+      const edgeEl = e.target.closest('.edge-hit');
+      drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, ox: state.tx, oy: state.ty, moved: false, edge: edgeEl ? Number(edgeEl.dataset.i) : null };
       canvas.classList.add('panning');
     }
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e => {
     movePresence(e);
-    if (!drag) return;
+    if (!drag) { updateHover(e); return; }
     const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
     if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    if (drag.kind === 'link') { moveLink(e); return; }
     if (drag.kind === 'pan') { state.tx = drag.ox + dx; state.ty = drag.oy + dy; applyView(); }
     else if (state.edit && drag.moved) {
       const n = drag.n;
@@ -354,9 +372,10 @@
   canvas.addEventListener('pointerup', () => {
     if (!drag) return;
     canvas.classList.remove('panning');
+    if (drag.kind === 'link') { finishLink(); drag = null; return; }
     if (!drag.moved) {
-      if (drag.kind === 'node' && state.link) linkClick(drag.n.id);
-      else { if (state.linkFrom) { state.linkFrom = null; paintHighlight(); } selectNode(drag.kind === 'node' ? drag.n.id : null); }
+      if (drag.edge != null) selectEdge(drag.edge);
+      else selectNode(drag.kind === 'node' ? drag.n.id : null);
     } else if (drag.kind === 'node' && state.edit) { renderNodes(); syncCustom(); }
     drag = null;
   });
@@ -377,7 +396,7 @@
 
   // Node click → highlight + jump to its guide step + chat context
   function selectNode(id) {
-    state.selected = id;
+    state.selected = id; state.selEdge = null;
     state.focus = new Set();
     if (id) {
       const step = allSteps.find(s => s.nodes.includes(id));
@@ -819,7 +838,7 @@
   const CUSTOM_KEY = 'archimate-custom-canvas';
   const custom = { nodes: [], edges: [], seq: 0 };
   try { Object.assign(custom, JSON.parse(localStorage.getItem(CUSTOM_KEY) || '{}')); } catch {}
-  const tools = $('#customTools'), palette = $('#svcPalette'), hint = $('#canvasHint'), linkBtn = $('#linkBtn');
+  const tools = $('#customTools'), palette = $('#svcPalette'), hint = $('#canvasHint');
 
   // 지금 캔버스 내용을 저장하고 화면의 개수 표시를 갱신한다.
   function syncCustom() {
@@ -834,19 +853,19 @@
   function openCustom(fresh = false) {
     if (fresh) { custom.nodes = []; custom.edges = []; custom.seq = 0; }
     isCustom = true; current = null;
-    state.selected = null; state.focus = new Set(); state.openStep = null; state.homeView = null; state.deployed = false; state.tab = null;
+    state.selected = null; state.selEdge = null; state.focus = new Set(); state.openStep = null; state.homeView = null; state.deployed = false; state.tab = null;
     nodes = custom.nodes.map(n => ({ ...n })); byId = Object.fromEntries(nodes.map(n => [n.id, n]));
     edges = custom.edges.map(([a, b]) => [a, b, '']); groups = []; GUIDE = []; allSteps = []; checklists = [];
     $('#deployStatus').textContent = '배포 전'; $('#deployStatus').className = 'pill';
     $('#chatCtx').textContent = '컨텍스트: 전체 스택';
     tools.hidden = false; palette.hidden = true; setEdit(true, true);
-    renderNodes(); setLink(false, true); renderGuide();
+    renderNodes(); renderGuide();
     if (nodes.length) fit(); else { state.scale = 1; state.tx = 0; state.ty = 0; applyView(); }
     syncCustom();
     if (viewing === 'live') addMsg('ai', nodes.length ? `<b>내 캔버스</b>로 바꿨어요. 서비스 ${nodes.length}개, 연결 ${edges.length}개예요.` : '새 캔버스를 만들었어요. 위쪽의 "서비스 추가"로 시작해 보세요.');
   }
   function leaveCustom() {
-    isCustom = false; tools.hidden = true; palette.hidden = true; hint.hidden = true; state.link = false; state.linkFrom = null; canvas.classList.remove('linking'); linkBtn.classList.remove('on'); setEdit(false, true);
+    isCustom = false; tools.hidden = true; palette.hidden = true; hint.hidden = true; hoverLink = null; linkHandle.hidden = true; edgeDelEl.hidden = true; state.selEdge = null; canvas.classList.remove('linkhover', 'linking'); setEdit(false, true);
   }
 
   // --- 서비스 추가: 화면에 보이는 영역의 가운데에 놓는다 ---
@@ -873,35 +892,92 @@
     renderNodes(); selectNode(id); syncCustom();
   }
 
-  // --- 연결: 출발 서비스, 도착 서비스를 차례로 누른다. 이미 연결된 두 서비스를 다시 이으면 끊는다 ---
-  function setLink(on, quiet) {
-    state.link = on; state.linkFrom = null;
-    canvas.classList.toggle('linking', on); linkBtn.classList.toggle('on', on); linkBtn.setAttribute('aria-pressed', String(on));
-    paintHighlight();
-    if (on && !quiet) toast('출발 서비스를 누른 뒤 도착 서비스를 눌러 주세요');
+  // --- 연결: 블록 모서리 근처에 커서를 두면 화살표가 나타나고, 끌어서 다른 블록에 놓으면 이어진다 ---
+  let hoverLink = null;   // { node, side, x, y }  (월드 좌표)
+  const canLink = () => isCustom && state.edit;
+  const toWorld = e => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left - state.tx) / state.scale, y: (e.clientY - r.top - state.ty) / state.scale }; };
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  // 커서가 어떤 블록의 테두리 근처(바깥 14px, 안쪽 8px)에 있으면 그 변과 변 위의 점을 돌려준다
+  function findEdgeSpot(p) {
+    const outer = 14 / state.scale, inner = 8 / state.scale;
+    let best = null;
+    nodes.forEach(n => {
+      const out = Math.hypot(Math.max(n.x - p.x, 0, p.x - (n.x + NW)), Math.max(n.y - p.y, 0, p.y - (n.y + NH)));
+      // 바깥이면 테두리까지의 거리, 안쪽이면 테두리에서 들어온 깊이
+      const d = out > 0 ? out : Math.min(p.x - n.x, n.x + NW - p.x, p.y - n.y, n.y + NH - p.y);
+      if (d > (out > 0 ? outer : inner)) return;
+      if (!best || d < best.d) best = { n, d };
+    });
+    if (!best) return null;
+    const n = best.n;
+    const side = [
+      { side: 'top', d: Math.abs(p.y - n.y), x: clamp(p.x, n.x + NW * 0.15, n.x + NW * 0.85), y: n.y },
+      { side: 'bottom', d: Math.abs(p.y - (n.y + NH)), x: clamp(p.x, n.x + NW * 0.15, n.x + NW * 0.85), y: n.y + NH },
+      { side: 'left', d: Math.abs(p.x - n.x), x: n.x, y: clamp(p.y, n.y + NH * 0.15, n.y + NH * 0.85) },
+      { side: 'right', d: Math.abs(p.x - (n.x + NW)), x: n.x + NW, y: clamp(p.y, n.y + NH * 0.15, n.y + NH * 0.85) },
+    ].sort((a, b) => a.d - b.d)[0];
+    return { node: n, side: side.side, x: side.x, y: side.y };
   }
-  linkBtn.onclick = () => setLink(!state.link);
-  function linkClick(id) {
-    if (!state.linkFrom) { state.linkFrom = id; paintHighlight(); toast('이제 도착 서비스를 눌러 주세요'); return; }
-    const a = state.linkFrom, b = id;
-    state.linkFrom = null;
-    if (a !== b) {
-      const i = edges.findIndex(e => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a));
-      if (i >= 0) { edges.splice(i, 1); toast('연결을 끊었어요'); } else { edges.push([a, b, '']); toast('연결했어요'); }
-      syncCustom();
-    }
+  function updateHover(e) {
+    const ok = canLink() && !drag && !e.target.closest('.topbar, .custom-tools, .chat, .zoom, .chat-fab, .node-del, .edge-del');
+    hoverLink = ok ? findEdgeSpot(toWorld(e)) : null;
+    canvas.classList.toggle('linkhover', !!hoverLink);
+    if (!hoverLink) { linkHandle.hidden = true; return; }
+    const rot = { top: -90, right: 0, bottom: 90, left: 180 }[hoverLink.side];
+    linkHandle.style.left = hoverLink.x + 'px'; linkHandle.style.top = hoverLink.y + 'px';
+    linkHandle.style.transform = `translate(-50%, -50%) scale(${1 / state.scale}) rotate(${rot}deg)`;   // 확대·축소해도 같은 크기
+    linkHandle.hidden = false;
+  }
+  function startLink(e) {
+    const h = hoverLink;
+    drag = { kind: 'link', from: h.node, x0: h.x, y0: h.y, sx: e.clientX, sy: e.clientY, moved: false, target: null };
+    linkHandle.hidden = true;
+    edgesEl.insertAdjacentHTML('beforeend', `<path class="edge-preview" d="M${h.x} ${h.y}L${h.x} ${h.y}"/>`);
+    drag.preview = edgesEl.lastElementChild;
+    canvas.classList.add('linking');
+    canvas.setPointerCapture(e.pointerId);
+  }
+  function moveLink(e) {
+    const p = toWorld(e);
+    const t = nodes.find(n => n !== drag.from && p.x >= n.x - 6 && p.x <= n.x + NW + 6 && p.y >= n.y - 6 && p.y <= n.y + NH + 6) || null;
+    if (t !== drag.target) { drag.target?.el?.classList.remove('link-target'); t?.el.classList.add('link-target'); drag.target = t; }
+    drag.preview.setAttribute('d', `M${drag.x0} ${drag.y0}L${t ? t.x + NW / 2 : p.x} ${t ? t.y + NH / 2 : p.y}`);
+  }
+  function finishLink() {
+    const { from, target, preview, moved } = drag;
+    preview.remove(); target?.el?.classList.remove('link-target'); canvas.classList.remove('linking');
+    if (!target) { if (!moved) selectNode(from.id); return; }
+    if (edges.some(e => (e[0] === from.id && e[1] === target.id) || (e[0] === target.id && e[1] === from.id))) { toast('이미 연결돼 있어요'); return; }
+    edges.push([from.id, target.id, '']);
+    renderEdges(); syncCustom(); toast('연결했어요');
+  }
+
+  // --- 연결선 선택: 선을 누르면 가운데에 빨간 삭제 버튼이 나온다 ---
+  function selectEdge(i) {
+    const ed = edges[i]; if (!ed) return;
+    state.selEdge = { a: ed[0], b: ed[1] }; state.selected = null; state.focus = new Set();
     paintHighlight();
   }
 
-  // --- 삭제 ---
-  function deleteSelected() {
+  // --- 삭제: 선택한 블록(우측 상단 빨간 버튼) 또는 연결선(가운데 빨간 버튼), Delete 키 ---
+  function deleteSelection() {
+    if (state.selEdge) {
+      const { a, b } = state.selEdge;
+      edges = edges.filter(e => !(e[0] === a && e[1] === b));
+      state.selEdge = null; renderEdges(); syncCustom(); toast('연결을 지웠어요');
+      return;
+    }
     const id = state.selected; if (!id || !byId[id]) return;
     nodes.splice(nodes.findIndex(n => n.id === id), 1); delete byId[id];
     edges = edges.filter(([a, b]) => a !== id && b !== id);
     state.selected = null; renderNodes(); renderGuide(); syncCustom();
     toast('서비스를 지웠어요');
   }
-  $('#delBtn').onclick = () => (state.selected ? deleteSelected() : toast('지울 서비스를 먼저 눌러 선택하세요'));
+  nodesEl.addEventListener('click', e => {
+    const b = e.target.closest('.node-del'); if (!b) return;
+    e.stopPropagation(); state.selected = b.closest('.node').dataset.id; deleteSelection();
+  });
+  edgeDelEl.onclick = e => { e.stopPropagation(); deleteSelection(); };
 
   // --- 새 캔버스 만들기 확인 ---
   const resetModal = $('#resetModal');
@@ -954,8 +1030,8 @@
     else if (e.key === '0') fit();
     else if (e.key.toLowerCase() === 'e') toggleEdit();
     else if (e.key === '/') { e.preventDefault(); showChat(); input.focus(); }
-    else if (e.key === 'Escape') { if (state.linkFrom) { state.linkFrom = null; paintHighlight(); } palette.hidden = true; resetModal.hidden = true; selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; cmpModal.hidden = true; if (!failRetry.disabled) failModal.hidden = true; closeHistory(); }
-    else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && state.selected) deleteSelected();
+    else if (e.key === 'Escape') { palette.hidden = true; resetModal.hidden = true; selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; cmpModal.hidden = true; if (!failRetry.disabled) failModal.hidden = true; closeHistory(); }
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && (state.selected || state.selEdge)) deleteSelection();
   });
 
   // ---------- Toast ----------

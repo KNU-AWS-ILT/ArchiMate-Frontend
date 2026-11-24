@@ -13,6 +13,9 @@
       <div class="world" id="world">
         <svg class="edges" id="edges" width="2400" height="1400"></svg>
         <div class="nodes" id="nodes"></div>
+        <!-- 새 캔버스: 블록 모서리에서 끌어 연결할 때 나타나는 화살표, 선택한 연결선의 삭제 버튼 -->
+        <div class="link-handle" id="linkHandle" hidden><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        <button class="edge-del" id="edgeDel" hidden title="연결 삭제 (Delete)" aria-label="연결 삭제">✕</button>
       </div>
 
       <!-- floating top bar -->
@@ -40,14 +43,12 @@
       <!-- 새 캔버스(직접 구성) 도구 -->
       <div class="custom-tools" id="customTools" hidden>
         <button class="pill pill-btn" id="addSvcBtn">＋ 서비스 추가</button>
-        <button class="pill pill-btn" id="linkBtn" aria-pressed="false" title="출발 서비스, 도착 서비스를 차례로 누르면 연결돼요. 이미 연결된 두 서비스를 다시 이으면 끊어져요.">연결</button>
-        <button class="pill pill-btn" id="delBtn" title="선택한 서비스 삭제 (Delete 키)">삭제</button>
         <div class="svc-palette" id="svcPalette" hidden></div>
       </div>
       <div class="canvas-hint" id="canvasHint" hidden>
         <b>새 캔버스</b>
         <span>위쪽의 "서비스 추가"를 눌러 시작하세요.</span>
-        <span>서비스를 끌어서 옮기고, "연결"로 선을 이을 수 있어요.</span>
+        <span>서비스를 끌어서 옮기고, 블록 모서리에서 다른 블록으로 끌면 선이 이어져요.</span>
       </div>
 
       <!-- ===== AI chat (non-modal, floating) ===== -->

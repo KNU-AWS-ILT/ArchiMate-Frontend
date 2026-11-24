@@ -647,5 +647,26 @@ table.cmp .cmp-failed p { margin: 4px 0 10px; color: var(--danger-text); }
 }
 .canvas-hint[hidden] { display: none; }
 .canvas-hint b { font-size: var(--fs-title); color: var(--text); margin-bottom: 4px; }
-.node.link-source { box-shadow: 0 0 0 3px var(--accent), var(--shadow); }
-.canvas.linking .node { cursor: crosshair; }
+/* 블록 모서리에서 끌어 연결 */
+.link-handle {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%; z-index: 4; pointer-events: none;
+  background: var(--accent); color: var(--on-accent); display: grid; place-items: center; box-shadow: var(--shadow);
+}
+.link-handle[hidden] { display: none; }
+.link-handle svg { width: 13px; height: 13px; stroke-width: 2.8; }
+.canvas.linkhover, .canvas.linkhover .node, .canvas.linking, .canvas.linking * { cursor: crosshair !important; }
+.edges .edge-preview { stroke: var(--accent); stroke-width: 2.2; stroke-dasharray: 5 4; opacity: 1 !important; fill: none; }
+.node.link-target { box-shadow: 0 0 0 3px var(--success), var(--shadow); }
+.edges .edge-hit { stroke: transparent; stroke-width: 16; stroke-dasharray: none; opacity: 1; fill: none; pointer-events: stroke; cursor: pointer; }
+.edges path.sel { stroke: var(--accent); stroke-width: 2.6; stroke-dasharray: none; opacity: 1; }
+/* 빨간 삭제 버튼 (선택한 블록 우측 상단, 선택한 연결선 가운데) */
+.node-del, .edge-del {
+  width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid var(--surface);
+  background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 1;
+  place-items: center; cursor: pointer; box-shadow: var(--shadow);
+}
+.node-del:hover, .edge-del:hover { background: var(--danger-hover); }
+.node-del { position: absolute; top: -11px; right: -11px; display: none; z-index: 3; }
+.node.selected .node-del { display: grid; }
+.edge-del { position: absolute; margin: -11px 0 0 -11px; z-index: 4; display: grid; }
+.edge-del[hidden] { display: none; }
