@@ -1,6 +1,6 @@
 # 프론트엔드 필요 데이터 기록 (API 호출 대비)
 작성 기준: `ArchiMate-Frontend/prototype/app.js`의 목 데이터 (2026-11-19)
-최근 갱신: 2026-11-24 (폴링 확정, 비용 형식 수락, Cognito 로그인 방식 결정, 프로토타입 채팅 기록 목 데이터 기록)
+최근 갱신: 2026-11-24 (프로토타입 3안 선택·비교와 목 데이터 교체 반영)
 용도: 프로토타입이 목 데이터로 처리하는 값을 정리해, API 연동과 타입 정의의 기준으로 쓴다.
 
 ## 이 문서의 상태
@@ -12,12 +12,12 @@
 ## 1. 프로토타입 목 데이터와 API 대응표
 | 프로토타입 변수 | 내용 | 실제 출처 | 비고 |
 | --- | --- | --- | --- |
-| `TYPES` | 서비스 종류별 이름, 분류, 역할 설명, 월 비용(`cost`), Terraform 리소스명(`tf`) | 서비스 종류는 `serviceType`(21종), 설명은 설계 응답의 `nodes[].role`·`reason`과 D | `cost`는 목 값. 실제는 `monthlyCost`를 표시만 한다. `tf`는 CDK 출력이 범위 제외라서 사용하지 않는다. |
+| `TYPES` | 서비스 종류별 이름, 분류, 아이콘, 기본 역할 설명 | 서비스 종류는 `serviceType`(21종), 설명은 설계 응답의 `nodes[].role`·`reason`과 D | 프로토타입은 21종 키를 계약 값(`api_gateway` 등)과 같게 썼다. 월 비용은 프론트가 만들지 않고 `monthlyCost`만 표시한다. |
 | `CAT`, `ICON` | 분류 색상, 아이콘 | 프론트엔드 자체 자산 | API에서 받지 않는다. `serviceType`으로 매핑한다. |
-| `raw` / `nodes` | 노드 id, 서비스 종류 | 설계 응답의 `architecture.nodes` | **좌표는 서버가 주지 않는다.** 프론트가 그룹 구조로 자동 배치한다. (확정) |
+| `raw` / `nodes` | 노드 id, 서비스 종류 | 설계 응답의 `architecture.nodes` | **좌표는 서버가 주지 않는다.** 프론트가 그룹 구조로 자동 배치한다. (확정) 프로토타입은 `prototype/app.js`의 `layoutArchitecture()`로 배치한다. (x: 사용자에서 시작하는 흐름 순서, y: 리전·VPC·서브넷 띠) |
 | `edges` | 노드 간 연결 | `architecture.edges` (`from`, `to`, `label`) | |
 | `groups` | 노드 묶음 | `architecture.groups` (`id`, `kind`, `label`, `parentId`) | VPC·서브넷은 노드가 아니라 `kind`로 표현 |
-| `GUIDE` | 단계별 절차(제목, 설명, 할 일, 콘솔 경로, 경고, 연결 노드) | 운영 절차 (B의 `operationsGuide` 또는 C) | `cli`는 없고 `consolePath`가 있다. |
+| `GUIDE` | 단계별 절차(제목, 설명, 할 일, 콘솔 경로, 경고, 연결 노드) | 운영 절차 (B의 `operationsGuide` 또는 C) | `cli`는 없고 `consolePath`가 있다. 안마다 `phases[]`(탭)와 `checklists[]`(비용·장애 대응)가 다르다. |
 | `state.done` | 완료 체크한 절차 id | 브라우저 `localStorage` | 키는 `guide:{designId}:{stepId}` (확정) |
 | 스택 목록, 채팅 응답, Deploy | 프로토타입 전용 | 없음 | 범위 제외. 아래 3번 참고 |
 
@@ -48,7 +48,7 @@
 - AI 채팅 응답과 컨텍스트 (대화형 수정)
 - AI 채팅 대화 기록 목록과 삭제 확인 모달. 프로토타입 `CHAT_HISTORY` 목 데이터(제목, 시간, 메시지 목록)를 쓴다.
 - Deploy 버튼, 배포 상태 (원클릭 배포)
-- 스택 선택 목록 (설계 히스토리·공유 링크는 P1)
+- 설계 히스토리와 여러 캔버스 관리 (P1, 이후 기능 개선). 이전 프로토타입의 스택 선택 메뉴(Architecture Testing 등)는 3안 선택(최소비용형·균형형·확장형)으로 바꿨다.
 - 알림 벨, presence 커서 (실시간 협업)
 
 ## 4. 목 데이터 파일 구성 (제안)
@@ -69,7 +69,9 @@
 - 백엔드는 모킹 LLM에 지연 옵션(`MOCK_DELAY_S`)을 넣어 `queued → running → completed`와 안이 하나씩 채워지는 흐름을 재현할 수 있게 한다. (백엔드 #11)
 - 타입은 `contracts/openapi.json`으로 생성할 수 있다. (예: `pnpm dlx openapi-typescript contracts/openapi.json -o src/api/schema.d.ts`) PR #17 머지 후 사용한다.
 - 로컬 실행: `pip install -e ".[dev]"` 후 `LLM_PROVIDER=mock uvicorn archimate.api.app:app --reload --app-dir src`, Swagger는 `http://localhost:8000/docs`다. 개발 서버는 Railway에 11.24.(화)까지 올리는 것이 목표다.
-- 프로토타입은 순수 JS라서 `fetch`로 읽거나 `app.js` 안의 상수로 둔다. 어느 쪽이든 모양은 같게 유지한다.
+- 프로토타입은 `file://`로도 열려서 `fetch` 대신 `prototype/mock-data.js`(전역 `window.MOCK`)에 계약 예시를 그대로 복사해 둔다. `completed`(3안 성공), `partialFailed`(`design_job_partial_failed.json`), `failed`(`design_job_failed.json`) 3개다. 모양은 계약과 같게 유지하고 계약이 바뀌면 다시 복사한다.
+- 실패 화면은 주소에 `?state=partial-failed`(일부 안 실패) 또는 `?state=failed`(전부 실패)를 붙여 확인한다. 기본은 3안 모두 성공이다. 다시 시도는 잠깐 기다린 뒤 성공으로 바뀐다. (실제는 `POST /designs`로 새로 생성한다.)
+- 3안 선택은 상단 바 드롭다운이고, 탭은 `designs[]`와 `failures[]`에 있는 tier로만 만든다. 안별 월 비용과 난이도는 메뉴와 가이드 패널 위쪽에 표시하고, 상단 바의 "3안 비교" 모달에서 장단점·성장 로드맵과 함께 나란히 비교한다.
 
 ## 5. 스키마 확정 후 반영 사항
 프론트 초안(2026-11-19)과 백엔드·인프라 답변의 차이다. A~D 파일에는 이미 반영했다.
