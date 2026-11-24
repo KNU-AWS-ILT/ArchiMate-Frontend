@@ -94,6 +94,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .canvas.panning { cursor: grabbing; }
 .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+/* 서비스로 확대·복귀할 때 부드럽게 이동 */
+.canvas.view-anim .world { transition: transform .45s cubic-bezier(.4, 0, .2, 1); }
+.canvas.view-anim { transition: background-size .45s cubic-bezier(.4, 0, .2, 1), background-position .45s cubic-bezier(.4, 0, .2, 1); }
 .edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .edges path {
   stroke: var(--edge);
@@ -328,7 +331,6 @@ table.price tr.total td { font-weight: 700; border-bottom: 0; padding-top: 12px;
   padding: 4px 10px; border-radius: 999px; font-size: var(--fs-sub);
   border: 1px solid var(--border); background: var(--surface); color: var(--muted);
 }
-.chip.round { width: 26px; height: 26px; padding: 0; justify-content: center; }
 .theme-switch {
   display: flex; gap: 2px; padding: 2px; border-radius: 999px;
   border: 1px solid var(--border); background: var(--surface); cursor: pointer;
