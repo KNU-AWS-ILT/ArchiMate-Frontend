@@ -45,10 +45,11 @@
             <div><b>Architecture AI</b><small id="chatCtx">컨텍스트: 전체 스택</small></div>
           </div>
           <div class="chat-tools">
-            <button class="mini" id="chatClear" title="대화 지우기"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
-            <button class="mini" id="chatMin" title="최소화"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <button class="mini" id="chatClear" title="대화 기록 삭제"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+            <button class="mini" id="chatHistoryBtn" title="대화 기록" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
           </div>
         </header>
+        <div class="chat-history" id="chatHistory" hidden></div>
         <div class="chat-log" id="chatLog"></div>
         <div class="suggests" id="suggests">
           <button>다음에 뭘 설정해야 해?</button>
@@ -56,9 +57,10 @@
           <button>월 예상 비용 알려줘</button>
         </div>
         <form class="chat-input" id="chatForm">
-          <textarea id="chatText" rows="1" placeholder="아키텍처에 대해 물어보거나 변경을 요청하세요…"></textarea>
+          <textarea id="chatText" rows="1" placeholder="아키텍처에 대해 물어보세요…"></textarea>
           <button class="send" title="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </form>
+        <button class="edge-handle" id="chatClose" title="AI 대화 닫기" aria-label="AI 대화 닫기"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       </section>
       <button class="chat-fab" id="chatFab" hidden>
         <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
@@ -84,7 +86,8 @@
     </main>
 
     <!-- ===== Right panel: setup guide ===== -->
-    <aside class="panel">
+    <aside class="panel" id="guidePanel">
+      <button class="edge-handle" id="guideClose" title="설정 가이드 닫기" aria-label="설정 가이드 닫기"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <div class="panel-head">
         <div class="guide-top">
           <div>
@@ -137,6 +140,18 @@
         <dt>Wheel</dt><dd>Zoom</dd>
       </dl>
       <button class="btn btn-primary" data-close>Close</button>
+    </div>
+  </div>
+
+  <!-- delete-chat confirm modal -->
+  <div class="modal" id="confirmModal" hidden>
+    <div class="modal-card confirm" role="alertdialog" aria-labelledby="confirmTitle">
+      <h3 id="confirmTitle">대화 기록을 삭제하시겠습니까?</h3>
+      <p>삭제하면 지금 대화가 지워지고 되돌릴 수 없어요.</p>
+      <div class="modal-actions">
+        <button class="btn" id="confirmCancel">취소</button>
+        <button class="btn btn-danger" id="confirmOk">삭제</button>
+      </div>
     </div>
   </div>
 

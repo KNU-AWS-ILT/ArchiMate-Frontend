@@ -432,7 +432,7 @@
   log.addEventListener('click', e => { const b = e.target.closest('[data-ref]'); if (b) openStep(b.dataset.ref); });
 
   function greet() {
-    log.innerHTML = '';
+    log.innerHTML = ''; viewing = 'live';
     addMsg('ai', `안녕하세요! 현재 스택은 서비스 ${nodes.length}개, 설정 단계 ${allSteps.length}개로 구성돼 있어요.\n오른쪽 가이드를 따라가다 막히면 물어보세요. 캔버스에서 서비스를 클릭하면 그 서비스 기준으로 답해 드립니다.\n\n먼저 시작할 단계: ${ref(nextStep()?.id || 'iam')}`);
   }
   const nextStep = () => allSteps.find(s => !state.done.has(s.id));
@@ -483,6 +483,7 @@
 
   function ask(q) {
     if (!q.trim()) return;
+    if (viewing !== 'live') openConversation('live');
     addMsg('me', esc(q));
     const typing = addMsg('ai typing', '<span></span><span></span><span></span>');
     setTimeout(() => { typing.remove(); addMsg('ai', reply(q)); }, 550 + Math.random() * 400);
@@ -492,11 +493,67 @@
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#chatForm').requestSubmit(); } });
   input.addEventListener('input', () => { input.style.height = ''; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; });
   $('#suggests').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ask(b.textContent); });
-  $('#chatClear').onclick = greet;
+  // --- 대화 기록 삭제 (확인 모달) ---
+  const confirmModal = $('#confirmModal');
+  $('#chatClear').onclick = () => { closeHistory(); confirmModal.hidden = false; $('#confirmCancel').focus(); };
+  $('#confirmCancel').onclick = () => { confirmModal.hidden = true; };
+  confirmModal.onclick = e => { if (e.target === confirmModal) confirmModal.hidden = true; };
+  $('#confirmOk').onclick = () => { confirmModal.hidden = true; liveHTML = null; greet(); toast('대화 기록을 삭제했어요'); };
+
+  // --- 대화 기록 리스트 (목 데이터) ---
+  const CHAT_HISTORY = [
+    { id: 'h1', title: 'DLQ 추가 방법 문의', when: '오늘 14:20', msgs: [
+      ['me', 'SQS에 DLQ 추가해줘'],
+      ['ai', 'q5 아래에 Dead-letter queue <b>dlq1</b>를 추가했어요.\n• maxReceiveCount = 5\n• 메시지 보존 14일'] ] },
+    { id: 'h2', title: '월 예상 비용 확인', when: '어제 18:05', msgs: [
+      ['me', '월 예상 비용 알려줘'],
+      ['ai', '저트래픽 기준 월 예상 비용은 약 <b>$42.10</b>이에요.\nMediaConvert가 가장 크니 출력 해상도 수를 줄이면 효과가 커요.'] ] },
+    { id: 'h3', title: 'Cognito 설정 순서', when: '11월 21일', msgs: [
+      ['me', '다음에 뭘 설정해야 해?'],
+      ['ai', '다음은 <b>네트워크·보안</b> 탭의 "Cognito User Pool 구성" 단계예요.\n사용자 가입·로그인과 JWT 발급을 설정합니다.'] ] },
+  ];
+  const histEl = $('#chatHistory'), histBtn = $('#chatHistoryBtn');
+  let liveHTML = null, viewing = 'live';
+  function renderHistory() {
+    histEl.innerHTML = '<h5>대화 기록</h5>' +
+      `<button data-h="live" class="${viewing === 'live' ? 'current' : ''}"><b>현재 대화</b><small>지금 진행 중</small></button>` +
+      CHAT_HISTORY.map(h => `<button data-h="${h.id}" class="${viewing === h.id ? 'current' : ''}"><b>${h.title}</b><small>${h.when}</small></button>`).join('');
+  }
+  function closeHistory() { histEl.hidden = true; histBtn.classList.remove('on'); histBtn.setAttribute('aria-expanded', 'false'); }
+  histBtn.onclick = e => {
+    e.stopPropagation();
+    if (!histEl.hidden) return closeHistory();
+    renderHistory(); histEl.hidden = false; histBtn.classList.add('on'); histBtn.setAttribute('aria-expanded', 'true');
+  };
+  histEl.onclick = e => {
+    e.stopPropagation();
+    const b = e.target.closest('[data-h]'); if (!b) return;
+    openConversation(b.dataset.h); closeHistory();
+  };
+  document.addEventListener('click', e => { if (!e.target.closest('#chatHistory')) closeHistory(); });
+  function openConversation(id) {
+    if (id === viewing) return;
+    if (viewing === 'live') liveHTML = log.innerHTML;
+    if (id === 'live') { if (liveHTML !== null) log.innerHTML = liveHTML; else greet(); }
+    else {
+      const h = CHAT_HISTORY.find(x => x.id === id);
+      log.innerHTML = '';
+      h.msgs.forEach(([who, text]) => addMsg(who, who === 'me' ? esc(text) : text));
+    }
+    viewing = id; log.scrollTop = log.scrollHeight;
+  }
 
   function showChat() { chat.hidden = false; fab.hidden = true; }
-  $('#chatMin').onclick = () => { chat.hidden = true; fab.hidden = false; };
+  $('#chatClose').onclick = () => { closeHistory(); chat.hidden = true; fab.hidden = false; fit(); };
   fab.onclick = () => { showChat(); input.focus(); };
+
+  // --- 설정 가이드 패널 닫기/열기 ---
+  const appEl = document.querySelector('.app'), guideClose = $('#guideClose');
+  guideClose.onclick = () => {
+    const closed = appEl.classList.toggle('guide-closed');
+    guideClose.title = guideClose.ariaLabel = closed ? '설정 가이드 열기' : '설정 가이드 닫기';
+    setTimeout(fit, 280);
+  };
 
   // drag chat window by its header (stays non-modal; canvas remains usable)
   $('#chatHead').addEventListener('pointerdown', e => {
@@ -578,7 +635,7 @@
     else if (e.key === '0') fit();
     else if (e.key.toLowerCase() === 'e') toggleEdit();
     else if (e.key === '/') { e.preventDefault(); showChat(); input.focus(); }
-    else if (e.key === 'Escape') { selectNode(null); closeStep(); modal.hidden = true; }
+    else if (e.key === 'Escape') { selectNode(null); closeStep(); modal.hidden = true; confirmModal.hidden = true; closeHistory(); }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && state.edit && state.selected) {
       const id = state.selected;
       nodes.splice(nodes.findIndex(n => n.id === id), 1); delete byId[id];
