@@ -162,7 +162,7 @@ function Inner({
 
     const fit = () => {
         home.current = null;
-        void flow.fitView({ padding: 0.15, duration: 250 });
+        void flow.fitView({ padding: 0.15, maxZoom: 1.6, duration: 250 });
     };
 
     // + / - / 0 단축키
@@ -251,8 +251,9 @@ function Inner({
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     connectionMode={ConnectionMode.Loose}
+                    connectionRadius={64}
                     fitView
-                    fitViewOptions={{ padding: 0.15 }}
+                    fitViewOptions={{ padding: 0.15, maxZoom: 1.6 }}
                     minZoom={0.3}
                     maxZoom={3}
                     nodesDraggable={movable}
