@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 1875px; height: 1044px; background: #f2f3f3; color: #232f3e;
+         font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif; position: relative; overflow: hidden; }
+  .abs { position: absolute; }
+  h1 { position: absolute; left: 60px; top: 34px; margin: 0; font-size: 34px; }
+  .sub { position: absolute; left: 60px; top: 86px; font-size: 19px; color: #5f6b7a; }
+  .frame { border-radius: 18px; border: 2px solid #d5dbdb; background: #fff; }
+  .frame > .ft { position: absolute; top: -16px; left: 24px; background: #232f3e; color: #fff;
+                 font-size: 17px; font-weight: 700; padding: 5px 14px; border-radius: 999px; }
+  .aws { border-color: #ff9900; background: #fffaf2; }
+  .aws > .ft { background: #ff9900; }
+  .band { border-radius: 12px; border: 1.5px solid #d5dbdb; background: #f8f8f8; padding: 12px 16px; }
+  .band .bt { font-size: 19px; font-weight: 700; display: flex; align-items: baseline; gap: 10px; }
+  .band .bt small { font-size: 15px; font-weight: 500; color: #5f6b7a; font-family: Consolas, monospace; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .chip { background: #fff; border: 1px solid #d5dbdb; border-radius: 8px; padding: 7px 11px; font-size: 15.5px; line-height: 1.3; }
+  .chip b { display: block; font-size: 16px; }
+  .chip span { color: #5f6b7a; font-size: 13.5px; }
+  .l1 { border-left: 6px solid #8c4fff; }
+  .l2 { border-left: 6px solid #ff9900; }
+  .l3 { border-left: 6px solid #01a88d; }
+  .l4 { border-left: 6px solid #dd344c; }
+  .l5 { border-left: 6px solid #5a6b86; }
+  .svc { border-radius: 12px; background: #fff; border: 1.5px solid #d5dbdb; padding: 12px 14px; box-shadow: 0 2px 8px rgba(35,47,62,.08); }
+  .svc .n { font-size: 19px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .svc .n i { width: 30px; height: 30px; border-radius: 7px; display: inline-block; flex: none; }
+  .svc p { margin: 6px 0 0; font-size: 15px; color: #5f6b7a; line-height: 1.4; }
+  .lbl { position: absolute; font-size: 14.5px; color: #232f3e; background: #f2f3f3; padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+  .lbl.w { background: #fffaf2; }
+  .legend { position: absolute; left: 60px; bottom: 26px; font-size: 15px; color: #5f6b7a; }
+  .down { position: absolute; left: 50%; width: 0; height: 0; transform: translateX(-50%);
+          border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 11px solid #9aa5b1; }
+</style>
+</head>
+<body>
+  <h1>ArchiMate 프론트엔드 시스템 아키텍처</h1>
+  <div class="sub">Next.js 정적 내보내기(output: 'export') · 브라우저는 /api/v1 상대 경로만 호출 · 서버 기능(SSR·API 라우트·미들웨어) 없음</div>
+
+  <!-- 브라우저 -->
+  <div class="abs frame" style="left:60px; top:140px; width:1030px; height:850px;">
+    <div class="ft">사용자 브라우저 · ArchiMate-Frontend</div>
+
+    <div class="abs band l1" style="left:24px; top:30px; width:982px; height:122px;">
+      <div class="bt">① 페이지 <small>src/app</small></div>
+      <div class="chips">
+        <div class="chip"><b>/</b><span>로그인</span></div>
+        <div class="chip"><b>/interview/</b><span>요구사항 인터뷰</span></div>
+        <div class="chip"><b>/designs/?jobId=</b><span>3안 생성 상태 · 구성도</span></div>
+        <div class="chip"><b>/auth/callback/</b><span>로그인 마무리</span></div>
+        <div class="chip"><b>Providers</b><span>Query · Auth · DesignsApi</span></div>
+      </div>
+    </div>
+    <div class="down" style="top:160px;"></div>
+
+    <div class="abs band l2" style="left:24px; top:180px; width:982px; height:176px;">
+      <div class="bt">② 기능 <small>src/features</small></div>
+      <div class="chips">
+        <div class="chip"><b>auth</b><span>Cognito 로그인 · 로그인 확인 · 계정 메뉴</span></div>
+        <div class="chip"><b>interview</b><span>질문 흐름 · 답변 검증 · 요청 변환</span></div>
+        <div class="chip"><b>designs</b><span>폴링 · 3안 메뉴 · 비교 · 실패 모달</span></div>
+        <div class="chip"><b>canvas</b><span>자동 배치 · React Flow 구성도 · 새 캔버스</span></div>
+        <div class="chip"><b>guide</b><span>설정 가이드 · 진행률 · 완료 체크</span></div>
+      </div>
+    </div>
+    <div class="down" style="top:364px;"></div>
+
+    <div class="abs band l3" style="left:24px; top:384px; width:982px; height:122px;">
+      <div class="bt">③ 공용 <small>src/shared</small></div>
+      <div class="chips">
+        <div class="chip"><b>ui</b><span>Button · Badge · Dialog · 아이콘 · 테마</span></div>
+        <div class="chip"><b>services</b><span>AWS 서비스 21종 카탈로그</span></div>
+        <div class="chip"><b>api</b><span>HttpClient · 에러 코드별 한국어 문구</span></div>
+        <div class="chip"><b>lib</b><span>금액 표시(원·달러)</span></div>
+      </div>
+    </div>
+    <div class="down" style="top:514px;"></div>
+
+    <div class="abs band l4" style="left:24px; top:534px; width:982px; height:172px;">
+      <div class="bt">④ API 경계 <small>DesignsApi 인터페이스</small></div>
+      <div class="chips">
+        <div class="chip"><b>http-api</b><span>fetch /api/v1 · Authorization: ID 토큰</span></div>
+        <div class="chip"><b>mock-api</b><span>contracts/examples (NEXT_PUBLIC_API_MODE=mock)</span></div>
+        <div class="chip"><b>zod 응답 검증</b><span>계약과 다르면 오류 화면</span></div>
+        <div class="chip"><b>contracts/</b><span>백엔드 JSON 스키마·OpenAPI 복사본</span></div>
+      </div>
+    </div>
+
+    <div class="abs band l5" style="left:24px; top:724px; width:982px; height:110px;">
+      <div class="bt">⑤ 상태와 저장 <small>서버로 보내지 않는 데이터</small></div>
+      <div class="chips">
+        <div class="chip"><b>TanStack Query</b><span>작업 조회 3초 폴링 · 최대 3분</span></div>
+        <div class="chip"><b>Zustand</b><span>인터뷰 답변 (메모리)</span></div>
+        <div class="chip"><b>localStorage</b><span>완료 체크 · 새 캔버스 · 테마 · 패널 폭</span></div>
+        <div class="chip"><b>sessionStorage</b><span>로그인 토큰</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AWS -->
+  <div class="abs frame aws" style="left:1180px; top:140px; width:635px; height:850px;">
+    <div class="ft">AWS (인프라 CDK)</div>
+  </div>
+  <div class="abs svc" style="left:1215px; top:190px; width:270px; height:118px;">
+    <div class="n"><i style="background:#dd344c"></i>Amazon Cognito</div>
+    <p>호스팅 로그인 페이지<br/>Authorization code + PKCE</p>
+  </div>
+  <div class="abs svc" style="left:1215px; top:420px; width:270px; height:118px;">
+    <div class="n"><i style="background:#8c4fff"></i>Amazon CloudFront</div>
+    <p>발표 주소 한 곳<br/>/ → S3, /api/* → API Gateway</p>
+  </div>
+  <div class="abs svc" style="left:1525px; top:420px; width:260px; height:118px;">
+    <div class="n"><i style="background:#7aa116"></i>Amazon S3</div>
+    <p>정적 빌드(out/)<br/>비공개 버킷</p>
+  </div>
+  <div class="abs svc" style="left:1215px; top:660px; width:270px; height:118px;">
+    <div class="n"><i style="background:#8c4fff"></i>API Gateway</div>
+    <p>로그인 사용자 확인 후<br/>백엔드로 전달</p>
+  </div>
+  <div class="abs svc" style="left:1525px; top:660px; width:260px; height:118px;">
+    <div class="n"><i style="background:#ed7100"></i>AWS Lambda</div>
+    <p>백엔드 API (FastAPI)<br/>3안 생성 · 월 비용 계산</p>
+  </div>
+  <div class="abs svc" style="left:1525px; top:860px; width:260px; height:108px; border-style:dashed;">
+    <div class="n"><i style="background:#232f3e"></i>GitHub Actions CI</div>
+    <p>lint · typecheck · test · build</p>
+  </div>
+
+  <svg class="abs" style="left:0; top:0;" width="1875" height="1044">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#232f3e"/>
+      </marker>
+      <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M0 0L10 5L0 10z" fill="#ff9900"/>
+      </marker>
+    </defs>
+    <g fill="none" stroke-width="2.5">
+      <!-- 로그인: 기능(auth) → Cognito -->
+      <path d="M1066 249 H1215" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- 페이지·정적 파일 요청: 브라우저 → CloudFront -->
+      <path d="M1066 455 H1215" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- API 호출: API 경계 → CloudFront -->
+      <path d="M1066 740 H1140 V505 H1215" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- CloudFront → S3 -->
+      <path d="M1485 479 H1525" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- CloudFront → API Gateway -->
+      <path d="M1350 538 V660" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- API Gateway → Lambda -->
+      <path d="M1485 719 H1525" stroke="#232f3e" marker-end="url(#a)"/>
+      <!-- CI → S3 (배포) -->
+      <path d="M1785 914 H1800 V479 H1785" stroke="#ff9900" stroke-dasharray="7 5" marker-end="url(#o)"/>
+    </g>
+  </svg>
+  <div class="lbl" style="left:1082px; top:222px;">로그인 이동</div>
+  <div class="lbl" style="left:1082px; top:428px;">HTML·JS</div>
+  <div class="lbl" style="left:1082px; top:748px;">/api/v1 요청</div>
+  <div class="lbl w" style="left:1362px; top:588px;">/api/*</div>
+  <div class="lbl w" style="left:1702px; top:806px; color:#9a5400;">out/ 업로드</div>
+
+  <div class="legend">비용은 백엔드가 계산한 값만 표시한다 · 로컬 개발: next dev + API_PROXY_TARGET 프록시 또는 목 데이터</div>
+</body>
+</html>
