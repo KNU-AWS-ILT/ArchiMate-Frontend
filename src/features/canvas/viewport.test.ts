@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boundsOf, viewForBounds } from './viewport';
+import { boundsOf, viewForBounds, FIT_PADDING, FOCUS_PADDING } from './viewport';
 
 const screenOf = (view: { x: number; y: number; zoom: number }, p: { x: number; y: number }) => ({
     x: p.x * view.zoom + view.x,
@@ -58,5 +58,12 @@ describe('viewForBounds', () => {
         const before = JSON.stringify(b);
         viewForBounds(b, area);
         expect(JSON.stringify(b)).toBe(before);
+    });
+});
+
+describe('React Flow 여백 값', () => {
+    // 숫자로 주면 픽셀로 읽고 소수점을 버려서 0px가 된다. 반드시 단위를 붙인다.
+    it.each([FIT_PADDING, FOCUS_PADDING])('%s는 단위가 붙은 값이다', (padding) => {
+        expect(padding).toMatch(/^\d+(\.\d+)?(%|px)$/);
     });
 });

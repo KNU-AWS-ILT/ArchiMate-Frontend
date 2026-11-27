@@ -59,3 +59,10 @@ export function viewForBounds(
         y: area.top + margin + (availH - h * zoom) / 2 - y1 * zoom,
     };
 }
+
+// React Flow 13은 숫자 padding을 픽셀로 읽고 소수점을 버린다. (0.15 → 0px)
+// 비율로 주려면 단위를 붙인다. 값은 화면 크기에 대한 한쪽 여백이다.
+/** 전체 화면 맞춤: 처음 열 때와 "화면에 맞추기" */
+export const FIT_PADDING = '6%';
+/** 설정 단계를 눌러 관련 서비스로 확대할 때 */
+export const FOCUS_PADDING = '12%';

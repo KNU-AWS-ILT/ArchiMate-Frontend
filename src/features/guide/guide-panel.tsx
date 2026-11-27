@@ -81,7 +81,7 @@ export function GuidePanel(p: Props) {
                                     aria-selected={active}
                                     onClick={() => p.onPhase(ph.key)}
                                     className={cn(
-                                        'rounded px-1 py-1.5 text-body',
+                                        'rounded px-1 py-1.5 text-body break-keep',
                                         active ? 'bg-accent text-on-accent' : 'text-muted',
                                     )}
                                 >
