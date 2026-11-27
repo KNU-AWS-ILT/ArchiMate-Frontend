@@ -21,16 +21,16 @@ interface Props {
 export function ShortcutsModal({ open, onOpenChange }: Props) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent title="단축키">
-                <dl className="mb-5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            <DialogContent title="단축키" size="md">
+                <dl className="mb-6 grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3">
                     {SHORTCUTS.map(([key, desc]) => (
                         <div key={key} className="contents">
                             <dt>
-                                <kbd className="rounded border border-b-2 border-border px-1.5 text-cap">
+                                <kbd className="rounded-md border border-b-2 border-border px-2 py-0.5 text-body whitespace-nowrap">
                                     {key}
                                 </kbd>
                             </dt>
-                            <dd className="text-muted">{desc}</dd>
+                            <dd className="text-[18px] text-muted">{desc}</dd>
                         </div>
                     ))}
                 </dl>

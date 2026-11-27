@@ -32,7 +32,7 @@ export function ThemeSwitch() {
             // 저장 실패는 무시한다.
         }
     };
-    const dot = 'grid size-[22px] place-items-center rounded-full text-muted';
+    const dot = 'grid size-[33px] place-items-center rounded-full text-title text-muted';
     return (
         <button
             type="button"
@@ -41,7 +41,7 @@ export function ThemeSwitch() {
             aria-label="어두운 화면"
             title="화면 색상 바꾸기"
             onClick={toggle}
-            className="flex gap-0.5 rounded-full border border-border bg-surface p-0.5"
+            className="flex gap-1 rounded-full border border-border bg-surface p-[3px]"
         >
             <span className={cn(dot, theme === 'light' && 'bg-accent text-on-accent')}>☀</span>
             <span className={cn(dot, theme === 'dark' && 'bg-accent text-on-accent')}>☾</span>
