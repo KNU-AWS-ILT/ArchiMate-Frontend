@@ -26,6 +26,7 @@ import {
     type ServiceFlowNode,
 } from './flow-elements';
 import { pickSides, type Side } from './handles';
+import { FIT_PADDING, FOCUS_PADDING } from './viewport';
 
 /** 노드 모양이 알아야 하는 캔버스 설정 */
 const CanvasModeContext = createContext({ linkable: false });
@@ -149,7 +150,7 @@ function Inner({
             home.current ??= flow.getViewport();
             void flow.fitView({
                 nodes: [...focusIds].map((id) => ({ id })),
-                padding: 0.5,
+                padding: FOCUS_PADDING,
                 maxZoom: 2.2,
                 duration: 450,
             });
@@ -162,7 +163,7 @@ function Inner({
 
     const fit = () => {
         home.current = null;
-        void flow.fitView({ padding: 0.15, maxZoom: 1.6, duration: 250 });
+        void flow.fitView({ padding: FIT_PADDING, maxZoom: 1.6, duration: 250 });
     };
 
     // + / - / 0 단축키
@@ -253,7 +254,7 @@ function Inner({
                     connectionMode={ConnectionMode.Loose}
                     connectionRadius={64}
                     fitView
-                    fitViewOptions={{ padding: 0.15, maxZoom: 1.6 }}
+                    fitViewOptions={{ padding: FIT_PADDING, maxZoom: 1.6 }}
                     minZoom={0.3}
                     maxZoom={3}
                     nodesDraggable={movable}
