@@ -1,1 +1,194 @@
 @import 'tailwindcss';
+
+/* 디자인 토큰: prototype/style.css에서 옮겼다. 색은 CSS 변수라 테마 전환은 data-theme로 한다. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+    --fs-title: 21px;
+    --fs-body: 16px;
+    --fs-sub: 14px;
+    --fs-cap: 12.5px;
+    --bg: #f2f3f3;
+    --surface: #ffffff;
+    --surface-2: #f8f8f8;
+    --border: #d5dbdb;
+    --text: #232f3e;
+    --muted: #5f6b7a;
+    --accent: #ff9900;
+    --accent-hover: #e88b00;
+    --on-accent: #ffffff;
+    --accent-text: #9a5400;
+    --accent-soft: #fff3e0;
+    --success: #1d8102;
+    --success-soft: #e9f4e6;
+    --warn-bg: #fff9db;
+    --warn-text: #6e5400;
+    --warn-border: #e8cf5b;
+    --edge: #687a8f;
+    --danger: #d13212;
+    --danger-hover: #b52a0f;
+    --danger-text: #b52a0f;
+    --danger-soft: #fdeceb;
+    --shadow: 0 1px 2px rgba(35, 47, 62, 0.08), 0 6px 18px rgba(35, 47, 62, 0.1);
+    color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+    --bg: #141b26;
+    --surface: #232f3e;
+    --surface-2: #1b2431;
+    --border: #37475a;
+    --text: #eaeded;
+    --muted: #a4b0be;
+    --accent-hover: #ffac33;
+    --accent-text: #ffac33;
+    --accent-soft: rgba(255, 153, 0, 0.16);
+    --success: #5bc96b;
+    --success-soft: rgba(91, 201, 107, 0.16);
+    --warn-bg: #3a3315;
+    --warn-text: #f2d45c;
+    --warn-border: #6b5c1d;
+    --edge: #8fa3b8;
+    --danger-text: #ff7b66;
+    --danger-soft: rgba(255, 123, 102, 0.16);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+}
+
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-border: var(--border);
+    --color-text: var(--text);
+    --color-muted: var(--muted);
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-on-accent: var(--on-accent);
+    --color-accent-text: var(--accent-text);
+    --color-accent-soft: var(--accent-soft);
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-warn-bg: var(--warn-bg);
+    --color-warn-text: var(--warn-text);
+    --color-warn-border: var(--warn-border);
+    --color-edge: var(--edge);
+    --color-danger: var(--danger);
+    --color-danger-hover: var(--danger-hover);
+    --color-danger-text: var(--danger-text);
+    --color-danger-soft: var(--danger-soft);
+    --shadow-card: var(--shadow);
+    --text-title: var(--fs-title);
+    --text-body: var(--fs-body);
+    --text-sub: var(--fs-sub);
+    --text-cap: var(--fs-cap);
+}
+
+body {
+    font-family:
+        'Inter',
+        'Pretendard',
+        system-ui,
+        -apple-system,
+        'Segoe UI',
+        sans-serif;
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+}
+
+/* ===== 구성도 캔버스 (React Flow) ===== */
+:root {
+    --grid: rgba(35, 47, 62, 0.1);
+}
+:root[data-theme='dark'] {
+    --grid: rgba(164, 176, 190, 0.08);
+}
+.react-flow {
+    --xy-background-color: var(--bg);
+    --xy-edge-stroke: var(--edge);
+    --xy-edge-stroke-width: 1.2;
+    --xy-edge-stroke-selected: var(--danger);
+    --xy-node-boxshadow-selected: none;
+    font-family: inherit;
+}
+.react-flow__edge-path {
+    stroke-dasharray: 3 3;
+    opacity: 0.75;
+    transition:
+        opacity 0.2s,
+        stroke-width 0.2s;
+}
+.react-flow__edge.is-hl .react-flow__edge-path {
+    opacity: 1;
+    stroke-width: 2;
+    animation: edge-flow 0.6s linear infinite;
+}
+.react-flow__edge.is-dim .react-flow__edge-path,
+.react-flow__edge.is-dim .react-flow__edge-text {
+    opacity: 0.2;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke: var(--danger);
+    stroke-width: 2.4;
+    opacity: 1;
+}
+.react-flow__edge-text {
+    font-size: 9.5px;
+}
+.react-flow__node.is-dim {
+    opacity: 0.35;
+}
+.react-flow__node.is-focus .node-card {
+    box-shadow:
+        0 0 0 2px var(--c),
+        0 0 0 6px color-mix(in srgb, var(--c) 22%, transparent),
+        var(--shadow);
+}
+.react-flow__node-service {
+    background: transparent;
+}
+.group-box {
+    border: 1px dashed var(--edge);
+    background: color-mix(in srgb, var(--edge) 8%, transparent);
+}
+.group-box.kind-vpc {
+    border-style: solid;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.group-box.kind-public_subnet {
+    border-style: solid;
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 7%, transparent);
+}
+.group-box.kind-private_subnet {
+    border-style: solid;
+    border-color: var(--edge);
+    background: color-mix(in srgb, var(--edge) 12%, transparent);
+}
+/* 연결용 핸들: 새 캔버스에서 블록 모서리에 마우스를 올리면 보인다 */
+.node-handle {
+    width: 14px;
+    height: 14px;
+    min-width: 0;
+    min-height: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.linkable .node-card:hover .node-handle,
+.linkable .react-flow__node.selected .node-handle {
+    opacity: 0.9;
+}
+.movable .react-flow__node-service {
+    cursor: move;
+}
+@keyframes edge-flow {
+    to {
+        stroke-dashoffset: -12;
+    }
+}
