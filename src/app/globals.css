@@ -97,3 +97,98 @@ body {
     color: var(--text);
     background: var(--bg);
 }
+
+/* ===== 구성도 캔버스 (React Flow) ===== */
+:root {
+    --grid: rgba(35, 47, 62, 0.1);
+}
+:root[data-theme='dark'] {
+    --grid: rgba(164, 176, 190, 0.08);
+}
+.react-flow {
+    --xy-background-color: var(--bg);
+    --xy-edge-stroke: var(--edge);
+    --xy-edge-stroke-width: 1.2;
+    --xy-edge-stroke-selected: var(--danger);
+    --xy-node-boxshadow-selected: none;
+    font-family: inherit;
+}
+.react-flow__edge-path {
+    stroke-dasharray: 3 3;
+    opacity: 0.75;
+    transition:
+        opacity 0.2s,
+        stroke-width 0.2s;
+}
+.react-flow__edge.is-hl .react-flow__edge-path {
+    opacity: 1;
+    stroke-width: 2;
+    animation: edge-flow 0.6s linear infinite;
+}
+.react-flow__edge.is-dim .react-flow__edge-path,
+.react-flow__edge.is-dim .react-flow__edge-text {
+    opacity: 0.2;
+}
+.react-flow__edge.selected .react-flow__edge-path {
+    stroke: var(--danger);
+    stroke-width: 2.4;
+    opacity: 1;
+}
+.react-flow__edge-text {
+    font-size: 9.5px;
+}
+.react-flow__node.is-dim {
+    opacity: 0.35;
+}
+.react-flow__node.is-focus .node-card {
+    box-shadow:
+        0 0 0 2px var(--c),
+        0 0 0 6px color-mix(in srgb, var(--c) 22%, transparent),
+        var(--shadow);
+}
+.react-flow__node-service {
+    background: transparent;
+}
+.group-box {
+    border: 1px dashed var(--edge);
+    background: color-mix(in srgb, var(--edge) 8%, transparent);
+}
+.group-box.kind-vpc {
+    border-style: solid;
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.group-box.kind-public_subnet {
+    border-style: solid;
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 7%, transparent);
+}
+.group-box.kind-private_subnet {
+    border-style: solid;
+    border-color: var(--edge);
+    background: color-mix(in srgb, var(--edge) 12%, transparent);
+}
+/* 연결용 핸들: 새 캔버스에서 블록 모서리에 마우스를 올리면 보인다 */
+.node-handle {
+    width: 14px;
+    height: 14px;
+    min-width: 0;
+    min-height: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.linkable .node-card:hover .node-handle,
+.linkable .react-flow__node.selected .node-handle {
+    opacity: 0.9;
+}
+.movable .react-flow__node-service {
+    cursor: move;
+}
+@keyframes edge-flow {
+    to {
+        stroke-dashoffset: -12;
+    }
+}
