@@ -7,7 +7,39 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
+  <!-- ===== 화면 1: 로그인 시작 ===== -->
+  <section class="screen" id="screenLogin" hidden>
+    <div class="login-card">
+      <div class="brand"><span class="ai-badge"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><b>ArchiMate</b></div>
+      <h1>나의 첫 간편 클라우드 서비스</h1>
+      <p>질문 몇 개에 답하면 예산과 경험에 맞는 AWS 구성도 3안, 월 예상 비용, 배포·운영 절차를 쉬운 한국어로 알려 드려요.</p>
+      <button class="btn btn-primary btn-lg" id="loginBtn">로그인하고 시작하기</button>
+      <small class="login-note" id="loginNote">Amazon Cognito 로그인 페이지로 이동해요.<br>(프로토타입은 이동 없이 로그인된 것으로 처리해요)</small>
+    </div>
+  </section>
+
+  <!-- ===== 화면 2: 요구사항 인터뷰 (채팅 형태) ===== -->
+  <section class="screen" id="screenInterview" hidden>
+    <header class="screen-head">
+      <div class="brand"><span class="ai-badge"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></span><b>ArchiMate</b></div>
+      <div class="screen-head-right">
+        <span class="iv-step" id="ivStep"></span>
+        <div class="acct"></div>
+      </div>
+    </header>
+    <div class="iv-progress"><div class="bar"><i id="ivBar"></i></div></div>
+    <div class="interview">
+      <div class="iv-log" id="ivLog"></div>
+      <div class="iv-input" id="ivInput"></div>
+    </div>
+  </section>
+
+  <!-- ===== 화면 3: 3안 만드는 중 ===== -->
+  <section class="screen" id="screenGen" hidden>
+    <div class="gen-card" id="genCard"></div>
+  </section>
+
+  <div class="app" hidden>
     <!-- ===== Canvas ===== -->
     <main class="canvas" id="canvas">
       <div class="world" id="world">
@@ -37,6 +69,7 @@
           <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           <i class="dot" id="bellDot" hidden></i>
         </button>
+        <div class="acct"></div>
       </div>
 
       <!-- 새 캔버스(직접 구성) 도구 -->
@@ -179,6 +212,18 @@
       <div class="modal-actions">
         <button class="btn" data-close>닫기</button>
         <button class="btn btn-primary" id="failRetry">다시 시도</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 질문부터 다시 하기 확인 -->
+  <div class="modal" id="restartModal" hidden>
+    <div class="modal-card confirm" role="alertdialog" aria-labelledby="restartTitle">
+      <h3 id="restartTitle">질문에 다시 답할까요?</h3>
+      <p>새로 답하고 나면 지금 보는 3안은 사라지고 새 3안이 만들어져요.</p>
+      <div class="modal-actions">
+        <button class="btn" id="restartCancel">취소</button>
+        <button class="btn btn-primary" id="restartOk">다시 답하기</button>
       </div>
     </div>
   </div>
