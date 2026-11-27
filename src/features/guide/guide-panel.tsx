@@ -86,7 +86,7 @@ export function GuidePanel(p: Props) {
                                     )}
                                 >
                                     {ph.title}
-                                    <small className="block text-[11px] opacity-80">
+                                    <small className="block text-cap opacity-80">
                                         {ph.sub} · {pp.done}/{pp.total}
                                     </small>
                                 </button>

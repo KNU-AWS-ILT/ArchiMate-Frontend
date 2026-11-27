@@ -92,7 +92,7 @@ function InterviewContent() {
                     <>
                         <div className={`${bubble} bg-surface shadow-card`}>
                             <b className="block">답변을 확인해 주세요.</b>
-                            <small className="text-muted">
+                            <small className="text-sub text-muted">
                                 맞으면 &quot;3안 만들기&quot;를 눌러 주세요. 고치고 싶은 답은
                                 &quot;여기부터 다시 답하기&quot;를 누르세요.
                             </small>
@@ -165,9 +165,11 @@ function Question({ q }: { q: (typeof QUESTIONS)[number] }) {
     return (
         <div className={`${bubble} bg-surface shadow-card`}>
             <b className="block">{q.text}</b>
-            {q.help && <small className="block text-muted">{q.help}</small>}
+            {q.help && <small className="block text-sub text-muted">{q.help}</small>}
             {!q.required && (
-                <small className="block text-muted">(선택 질문이에요. 건너뛰어도 돼요.)</small>
+                <small className="block text-sub text-muted">
+                    (선택 질문이에요. 건너뛰어도 돼요.)
+                </small>
             )}
         </div>
     );
