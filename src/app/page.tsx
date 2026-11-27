@@ -1,7 +1,5 @@
+import { LoginScreen } from '@/features/auth/login-screen';
+
 export default function HomePage() {
-    return (
-        <main className="p-8">
-            <h1 className="text-2xl font-bold">ArchiMate</h1>
-        </main>
-    );
+    return <LoginScreen />;
 }
