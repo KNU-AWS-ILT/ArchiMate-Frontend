@@ -37,7 +37,9 @@ export function LoginScreen() {
                     </span>
                     ArchiMate
                 </div>
-                <h1 className="mb-3 text-title font-bold">나의 첫 간편 클라우드 서비스</h1>
+                <h1 className="mb-3 text-[28px] leading-[1.3] font-bold">
+                    나의 첫 간편 클라우드 서비스
+                </h1>
                 <p className="mb-6 text-body text-muted">
                     질문 몇 개에 답하면 예산과 경험에 맞는 AWS 구성도 3안, 월 예상 비용, 배포·운영
                     절차를 쉬운 한국어로 알려 드려요.

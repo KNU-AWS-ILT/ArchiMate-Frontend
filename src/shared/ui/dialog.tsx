@@ -11,8 +11,8 @@ export const DialogClose = RadixDialog.Close;
 interface DialogContentProps {
     title: string;
     description?: string;
-    /** `lg`는 3안 비교 표처럼 넓은 내용용이다. */
-    size?: 'sm' | 'lg';
+    /** `md`는 단축키처럼 줄이 긴 목록, `lg`는 3안 비교 표처럼 넓은 내용용이다. */
+    size?: 'sm' | 'md' | 'lg';
     children: ReactNode;
 }
 
@@ -23,7 +23,9 @@ export function DialogContent({ title, description, size = 'sm', children }: Dia
             <RadixDialog.Content
                 className={cn(
                     'fixed top-1/2 left-1/2 z-50 max-h-[90vh] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-surface p-6 shadow-card',
-                    size === 'sm' ? 'w-[min(92vw,420px)]' : 'w-[min(96vw,1080px)]',
+                    size === 'sm' && 'w-[min(92vw,420px)]',
+                    size === 'md' && 'w-[min(92vw,560px)]',
+                    size === 'lg' && 'w-[min(96vw,1080px)]',
                 )}
             >
                 <RadixDialog.Title className="mb-3 text-title font-bold">{title}</RadixDialog.Title>

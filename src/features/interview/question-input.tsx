@@ -43,7 +43,7 @@ export function QuestionInput({ question: q, onAnswer }: Props) {
                             <span>
                                 <b className="block">{o.label}</b>
                                 {o.description && (
-                                    <small className="text-cap text-muted">{o.description}</small>
+                                    <small className="text-sub text-muted">{o.description}</small>
                                 )}
                             </span>
                         </button>
@@ -86,7 +86,7 @@ function MultiInput({ question: q, onAnswer, skip }: Props & { skip: React.React
                             <span>
                                 <b className="block">{o.label}</b>
                                 {o.description && (
-                                    <small className="text-cap text-muted">{o.description}</small>
+                                    <small className="text-sub text-muted">{o.description}</small>
                                 )}
                             </span>
                         </button>
