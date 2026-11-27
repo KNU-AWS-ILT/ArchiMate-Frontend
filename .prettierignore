@@ -5,3 +5,5 @@ pnpm-lock.yaml
 prototype
 docs
 README.md
+src/shared/api/schema.d.ts
+contracts

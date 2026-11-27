@@ -1,0 +1,6 @@
+{
+  "code": "DESIGN_GENERATION_FAILED",
+  "message": "구성도를 만들지 못했어요. 잠시 후 다시 시도해 주세요.",
+  "retryable": true,
+  "requestId": "req_demo"
+}

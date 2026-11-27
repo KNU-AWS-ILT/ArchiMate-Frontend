@@ -68,7 +68,7 @@
 
 - 계약 예시의 `monthlyCost`는 비용 계산 PR(백엔드 #18)이 머지되기 전이라 `null`이다. 비용 표시용 목 데이터는 `B-designs.md`의 월 비용 예시 형식을 쓴다.
 - 백엔드는 모킹 LLM에 지연 옵션(`MOCK_DELAY_S`)을 넣어 `queued → running → completed`와 안이 하나씩 채워지는 흐름을 재현할 수 있게 한다. (백엔드 #11)
-- 타입은 `contracts/openapi.json`으로 생성할 수 있다. (예: `pnpm dlx openapi-typescript contracts/openapi.json -o src/api/schema.d.ts`) PR #17 머지 후 사용한다.
+- 계약 복사본은 프론트 저장소 `contracts/`에 있다. (출처와 기준 커밋은 `contracts/SOURCE.md`) 타입은 `pnpm gen:api`로 `src/shared/api/schema.d.ts`에 생성한다. 백엔드 `main`에 `contracts/`가 머지되면 다시 복사한다.
 - 로컬 실행: `pip install -e ".[dev]"` 후 `LLM_PROVIDER=mock uvicorn archimate.api.app:app --reload --app-dir src`, Swagger는 `http://localhost:8000/docs`다. 개발 서버는 Railway에 11.24.(화)까지 올리는 것이 목표다.
 - 프로토타입은 `file://`로도 열려서 `fetch` 대신 `prototype/mock-data.js`(전역 `window.MOCK`)에 계약 예시를 그대로 복사해 둔다. `completed`(3안 성공), `partialFailed`(`design_job_partial_failed.json`), `failed`(`design_job_failed.json`) 3개다. 모양은 계약과 같게 유지하고 계약이 바뀌면 다시 복사한다.
 - 실패 화면은 주소에 `?state=partial-failed`(일부 안 실패) 또는 `?state=failed`(전부 실패)를 붙여 확인한다. 기본은 3안 모두 성공이다. 다시 시도는 잠깐 기다린 뒤 성공으로 바뀐다. (실제는 `POST /designs`로 새로 생성한다.)

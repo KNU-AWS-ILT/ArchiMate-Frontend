@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "AvailabilityNeed": {
+      "enum": [
+        "best_effort",
+        "standard",
+        "high"
+      ],
+      "title": "AvailabilityNeed",
+      "type": "string"
+    },
+    "AwsExperience": {
+      "enum": [
+        "none",
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "title": "AwsExperience",
+      "type": "string"
+    },
+    "DataStorageNeed": {
+      "enum": [
+        "relational",
+        "key_value",
+        "file_storage",
+        "none"
+      ],
+      "title": "DataStorageNeed",
+      "type": "string"
+    },
+    "ServiceType": {
+      "enum": [
+        "web_app",
+        "api_only",
+        "static_site",
+        "ai_chatbot",
+        "data_batch",
+        "other"
+      ],
+      "title": "ServiceType",
+      "type": "string"
+    },
+    "TrafficPattern": {
+      "enum": [
+        "steady",
+        "business_hours",
+        "spiky",
+        "unknown"
+      ],
+      "title": "TrafficPattern",
+      "type": "string"
+    },
+    "UserScale": {
+      "description": "동시 사용자 수 구간.",
+      "enum": [
+        "under_100",
+        "under_1k",
+        "under_10k",
+        "over_10k"
+      ],
+      "title": "UserScale",
+      "type": "string"
+    }
+  },
+  "description": "가이드형 인터뷰 답변 (API 요청의 `answers`). JSON 필드명 = 인터뷰 질문 id.",
+  "properties": {
+    "serviceType": {
+      "$ref": "#/$defs/ServiceType"
+    },
+    "concurrentUsers": {
+      "$ref": "#/$defs/UserScale"
+    },
+    "monthlyBudget": {
+      "description": "월 예산(원, KRW)",
+      "maximum": 100000000,
+      "minimum": 0,
+      "title": "Monthlybudget",
+      "type": "integer"
+    },
+    "awsExperience": {
+      "$ref": "#/$defs/AwsExperience"
+    },
+    "dataStorage": {
+      "description": "해당하는 것 모두. 'none'은 단독으로만",
+      "items": {
+        "$ref": "#/$defs/DataStorageNeed"
+      },
+      "minItems": 1,
+      "title": "Datastorage",
+      "type": "array"
+    },
+    "trafficPattern": {
+      "$ref": "#/$defs/TrafficPattern",
+      "default": "unknown"
+    },
+    "availability": {
+      "$ref": "#/$defs/AvailabilityNeed",
+      "default": "standard"
+    },
+    "freeText": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "자유 서술 보완 (서비스 설명, 특이사항)",
+      "title": "Freetext"
+    }
+  },
+  "required": [
+    "serviceType",
+    "concurrentUsers",
+    "monthlyBudget",
+    "awsExperience",
+    "dataStorage"
+  ],
+  "title": "Requirements",
+  "type": "object"
+}

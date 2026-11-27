@@ -1,0 +1,25 @@
+{
+  "nodeId": "app_db",
+  "serviceType": "dynamodb",
+  "name": "Amazon DynamoDB",
+  "category": "database",
+  "role": "동아리 공고와 지원서 저장",
+  "reason": "지원서처럼 ID로 바로 찾는 단순한 데이터라 표를 엮는 관계형 DB가 필요 없어요. 모집 기간에만 지원자가 몰리는데, 온디맨드 모드는 읽기·쓰기만큼만 과금되고 서버를 켜 둘 필요가 없어 AWS 경험이 없는 팀도 관리 부담이 없어요.",
+  "alternatives": [
+    {
+      "serviceType": "rds",
+      "name": "Amazon RDS",
+      "comparison": "SQL로 여러 표를 엮어 조회해야 한다면 RDS가 낫지만, 켜 둔 시간만큼 매달 고정 비용이 나가요."
+    }
+  ],
+  "cautions": [
+    "어떤 값으로 데이터를 찾을지(조회 패턴)를 먼저 정하고 키를 설계해야 나중에 고생하지 않아요.",
+    "실수로 지운 데이터를 되살리려면 특정 시점 복구(PITR)를 켜 두세요."
+  ],
+  "monthlyCost": {
+    "currency": "KRW",
+    "amount": 140,
+    "amountUsd": 0.1,
+    "note": "온디맨드 읽기 월 50만 건, 쓰기 5만 건, 저장 1GB 기준 · 무료 한도 적용"
+  }
+}

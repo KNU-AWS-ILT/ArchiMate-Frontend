@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "InterviewOption": {
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "value",
+        "label"
+      ],
+      "title": "InterviewOption",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "help": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Help"
+    },
+    "inputType": {
+      "enum": [
+        "single",
+        "multi",
+        "number",
+        "text"
+      ],
+      "title": "Inputtype",
+      "type": "string"
+    },
+    "options": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/InterviewOption"
+      },
+      "title": "Options",
+      "type": "array"
+    },
+    "required": {
+      "default": true,
+      "title": "Required",
+      "type": "boolean"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unit"
+    },
+    "placeholder": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Placeholder"
+    }
+  },
+  "required": [
+    "id",
+    "text",
+    "inputType"
+  ],
+  "title": "InterviewQuestion",
+  "type": "object"
+}

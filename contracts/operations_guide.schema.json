@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "Checklist": {
+      "properties": {
+        "key": {
+          "description": "'cost'(비용 이상 대응) 또는 'incident'(장애 대응)",
+          "title": "Key",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "title",
+        "items"
+      ],
+      "title": "Checklist",
+      "type": "object"
+    },
+    "GuidePhase": {
+      "properties": {
+        "key": {
+          "description": "단계 id. 영문 소문자·숫자·밑줄",
+          "title": "Key",
+          "type": "string"
+        },
+        "title": {
+          "description": "단계 이름, 예: '저장소·데이터베이스'",
+          "title": "Title",
+          "type": "string"
+        },
+        "sub": {
+          "description": "보조 문구, 예: '1단계'",
+          "title": "Sub",
+          "type": "string"
+        },
+        "intro": {
+          "description": "단계 소개 한 줄",
+          "title": "Intro",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/GuideStep"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "key",
+        "title",
+        "sub",
+        "intro",
+        "steps"
+      ],
+      "title": "GuidePhase",
+      "type": "object"
+    },
+    "GuideStep": {
+      "properties": {
+        "id": {
+          "description": "절차 id. 영문 소문자·숫자·밑줄, 안 안에서 고유 (완료 체크 저장 키)",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "desc": {
+          "description": "무엇을 왜 하는지 1~2문장",
+          "title": "Desc",
+          "type": "string"
+        },
+        "nodeIds": {
+          "description": "캔버스에서 강조할 노드 id",
+          "items": {
+            "type": "string"
+          },
+          "title": "Nodeids",
+          "type": "array"
+        },
+        "todo": {
+          "description": "따라 할 일 2~5개. 초보자가 그대로 따라 할 수 있게",
+          "items": {
+            "type": "string"
+          },
+          "title": "Todo",
+          "type": "array"
+        },
+        "consolePath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "AWS 콘솔 경로, 예: 'Lambda > 함수 > 함수 생성'",
+          "title": "Consolepath"
+        },
+        "warn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "주의 문구 (없으면 null)",
+          "title": "Warn"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "desc",
+        "nodeIds",
+        "todo"
+      ],
+      "title": "GuideStep",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "phases": {
+      "description": "배포 순서대로. 마지막 단계는 운영(비용 알람 포함)",
+      "items": {
+        "$ref": "#/$defs/GuidePhase"
+      },
+      "title": "Phases",
+      "type": "array"
+    },
+    "checklists": {
+      "items": {
+        "$ref": "#/$defs/Checklist"
+      },
+      "title": "Checklists",
+      "type": "array"
+    }
+  },
+  "required": [
+    "phases",
+    "checklists"
+  ],
+  "title": "OperationsGuide",
+  "type": "object"
+}

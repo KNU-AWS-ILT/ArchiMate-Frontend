@@ -1,0 +1,14 @@
+{
+  "answers": {
+    "serviceType": "web_app",
+    "concurrentUsers": "under_100",
+    "monthlyBudget": 50000,
+    "awsExperience": "none",
+    "dataStorage": [
+      "key_value"
+    ],
+    "trafficPattern": "spiky",
+    "availability": "best_effort",
+    "freeText": "바이브 코딩으로 만든 동아리 모집 사이트예요. 모집 기간에만 지원자가 몰려요."
+  }
+}
