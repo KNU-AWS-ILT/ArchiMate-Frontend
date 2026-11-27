@@ -317,6 +317,7 @@
     state.homeView = null;
     if (!nodes.length) return;
     const r = canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return;   // 구성도 화면이 숨겨져 있을 때
     const { left, top, w, h } = visibleBox();
     const x1 = Math.min(...nodes.map(n => n.x)) - 30, y1 = Math.min(...nodes.map(n => n.y)) - 40;
     const x2 = Math.max(...nodes.map(n => n.x + NW)) + 30, y2 = Math.max(...nodes.map(n => n.y + NH)) + 30;
@@ -705,7 +706,7 @@
 
   function renderTierMenu() {
     const cn = custom.nodes.length;
-    const customRows = `<div class="menu-sep"></div>${cn ? `<button class="tier-item custom${isCustom ? ' current' : ''}" data-custom="open"><span class="tier-name">내 캔버스${isCustom ? '<i class="tier-check">✓</i>' : ''}</span><span class="tier-title">직접 구성 · 서비스 ${cn}개 · 연결 ${custom.edges.length}개</span></button>` : ''}<button class="tier-item new" data-custom="new"><span class="tier-name">＋ 새 캔버스 만들기</span><span class="tier-title">빈 캔버스에서 서비스를 직접 추가하고 연결해요</span></button>`;
+    const customRows = `<div class="menu-sep"></div>${cn ? `<button class="tier-item custom${isCustom ? ' current' : ''}" data-custom="open"><span class="tier-name">내 캔버스${isCustom ? '<i class="tier-check">✓</i>' : ''}</span><span class="tier-title">직접 구성 · 서비스 ${cn}개 · 연결 ${custom.edges.length}개</span></button>` : ''}<button class="tier-item new" data-custom="new"><span class="tier-name">＋ 새 캔버스 만들기</span><span class="tier-title">빈 캔버스에서 서비스를 직접 추가하고 연결해요</span></button><button class="tier-item new" data-flow="restart"><span class="tier-name">↻ 질문에 다시 답하기</span><span class="tier-title">답을 바꿔서 3안을 새로 만들어요</span></button>`;
     menu.innerHTML = tierEntries().map(e => {
       if (e.failed) return `<button class="tier-item failed" data-tier="${e.tier}"><span class="tier-name">${TIER_LABEL[e.tier]}</span><span class="tier-fail">⚠ 만들지 못했어요 · 눌러서 다시 시도</span></button>`;
       const d = e.design, cur = current && current.id === d.id;
@@ -749,6 +750,7 @@
 
   tierBtn.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
   menu.onclick = e => {
+    if (e.target.closest('[data-flow]')) { menu.hidden = true; restartModal.hidden = false; return; }
     const c = e.target.closest('[data-custom]');
     if (c) {
       menu.hidden = true;
@@ -1017,7 +1019,7 @@
   $('#shortcutsBtn').onclick = () => { modal.hidden = false; };
   modal.onclick = e => { if (e.target === modal || e.target.closest('[data-close]')) modal.hidden = true; };
   document.addEventListener('keydown', e => {
-    if (e.target.matches('input, textarea, select')) return;
+    if (e.target.matches('input, textarea, select') || screen !== 'app') return;
     if (e.key === '+' || e.key === '=') zoomAt(1.2, ...center());
     else if (e.key === '-') zoomAt(1 / 1.2, ...center());
     else if (e.key === '0') fit();
@@ -1034,11 +1036,217 @@
     clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800);
   }
 
+  // ---------- 화면 흐름: 로그인 → 요구사항 인터뷰 → 3안 생성 → 구성도 ----------
+  // 프로토타입은 서버 없이 흉내만 낸다. 실제 로그인은 Cognito 호스팅 페이지로 이동한다.
+  const AUTH_KEY = 'archimate-auth';
+  const DEMO_EMAIL = 'demo@archimate.dev';
+  const screenEls = { login: $('#screenLogin'), interview: $('#screenInterview'), generating: $('#screenGen') };
+  const appRoot = document.querySelector('.app');
+  let screen = 'login';
+  const isLoggedIn = () => { try { return sessionStorage.getItem(AUTH_KEY) === '1'; } catch { return false; } };
+  const setLoggedIn = on => { try { on ? sessionStorage.setItem(AUTH_KEY, '1') : sessionStorage.removeItem(AUTH_KEY); } catch {} };
+
+  function goto(name) {
+    screen = name;
+    Object.entries(screenEls).forEach(([k, el]) => { el.hidden = k !== name; });
+    appRoot.hidden = name !== 'app';
+    menu.hidden = true;
+    if (name === 'app') requestAnimationFrame(() => { fit(); updateTopbar(); });
+  }
+
+  // --- 계정 메뉴 (상단 바, 인터뷰 머리글) ---
+  document.querySelectorAll('.acct').forEach(el => {
+    el.innerHTML = `<button class="acct-btn" aria-haspopup="menu" title="${DEMO_EMAIL}"><span class="avatar">${DEMO_EMAIL[0].toUpperCase()}</span></button>
+      <div class="acct-menu" role="menu" hidden><div class="acct-mail"><small>로그인한 계정</small><b>${DEMO_EMAIL}</b></div><button data-logout role="menuitem">로그아웃</button></div>`;
+  });
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.acct-btn'), menus = document.querySelectorAll('.acct-menu');
+    if (btn) { const m = btn.nextElementSibling, wasOpen = !m.hidden; menus.forEach(x => { x.hidden = true; }); m.hidden = wasOpen; return; }
+    if (e.target.closest('[data-logout]')) { logout(); return; }
+    menus.forEach(x => { x.hidden = true; });
+  });
+  function logout() {
+    setLoggedIn(false); resetInterview(); genAttempt = 0;
+    goto('login'); toast('로그아웃했어요');
+  }
+
+  // --- 로그인 ---
+  $('#loginBtn').onclick = () => {
+    const btn = $('#loginBtn');
+    btn.disabled = true; btn.textContent = '로그인 페이지로 이동하는 중…';
+    setTimeout(() => {
+      btn.disabled = false; btn.textContent = '로그인하고 시작하기';
+      setLoggedIn(true); resetInterview(); goto('interview'); renderInterview();
+    }, 900);
+  };
+
+  // --- 요구사항 인터뷰 (채팅 형태). 질문은 계약 예시(interview_questions.json) 그대로다 ---
+  const IV = MOCK.interview.questions;
+  const IV_LABEL = { serviceType: '서비스 종류', concurrentUsers: '동시 접속', monthlyBudget: '월 예산', awsExperience: 'AWS 경험', dataStorage: '저장 데이터', trafficPattern: '접속 패턴', availability: '멈춤 허용', freeText: '자유 서술' };
+  const iv = { answers: {}, index: 0 };
+  function resetInterview() { iv.answers = {}; iv.index = 0; }
+  const optLabel = (q, v) => (q.options.find(o => o.value === v) || {}).label || v;
+  function answerText(q, v) {
+    if (v === null || v === undefined || v === '') return '건너뜀';
+    if (q.inputType === 'multi') return v.map(x => optLabel(q, x)).join(', ');
+    if (q.inputType === 'number') return v === 0 ? '0원 (Free Tier 안에서만)' : fmtKRW(v);
+    if (q.inputType === 'text') return v;
+    return optLabel(q, v);
+  }
+  const bubbleAI = q => `<div class="msg ai"><b>${esc(q.text)}</b>${q.help ? `<small>${esc(q.help)}</small>` : ''}${q.required ? '' : '<small>(선택 질문이에요. 건너뛰어도 돼요.)</small>'}</div>`;
+  const bubbleMe = text => `<div class="msg me">${esc(text)}</div>`;
+
+  function renderInterview() {
+    const done = iv.index >= IV.length, q = IV[iv.index];
+    $('#ivStep').textContent = done ? '답변 확인' : `질문 ${iv.index + 1} / ${IV.length}`;
+    $('#ivBar').style.width = `${(Math.min(iv.index, IV.length) / IV.length) * 100}%`;
+    let html = '<div class="msg ai">안녕하세요! 질문 몇 개에 답해 주시면 예산과 경험에 맞는 AWS 구성도 3안을 만들어 드릴게요.</div>';
+    IV.slice(0, iv.index).forEach(x => { html += bubbleAI(x) + bubbleMe(answerText(x, iv.answers[x.id])); });
+    if (!done) html += bubbleAI(q);
+    else html += '<div class="msg ai"><b>답변을 확인해 주세요.</b><small>맞으면 "3안 만들기"를 눌러 주세요. 고치고 싶은 답은 "여기부터 다시 답하기"를 누르세요.</small></div>'
+      + `<div class="iv-summary">${IV.map((x, i) => `<div class="row"><span class="k">${IV_LABEL[x.id]}</span><span class="v">${esc(answerText(x, iv.answers[x.id]))}</span><button class="redo" data-redo="${i}">여기부터 다시 답하기</button></div>`).join('')}</div>`;
+    $('#ivLog').innerHTML = html;
+    renderIvInput(done ? null : q);
+    const logEl = $('#ivLog'); logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function renderIvInput(q) {
+    const box = $('#ivInput'), undo = iv.index > 0 ? '<button class="btn" data-undo>← 이전 답변 취소</button>' : '';
+    if (!q) { box.innerHTML = `<div class="iv-actions">${undo}<span class="grow"></span><button class="btn btn-primary btn-lg" id="ivMake">3안 만들기</button></div>`; return; }
+    const skip = q.required ? '' : '<button class="btn" data-skip>건너뛰기</button>';
+    if (q.inputType === 'single') {
+      box.innerHTML = `<div class="iv-opts">${q.options.map(o => `<button class="opt" data-pick="${o.value}"><span><b>${esc(o.label)}</b>${o.description ? `<small>${esc(o.description)}</small>` : ''}</span></button>`).join('')}</div><div class="iv-actions">${undo}<span class="grow"></span>${skip}</div>`;
+    } else if (q.inputType === 'multi') {
+      box.innerHTML = `<div class="iv-opts">${q.options.map(o => `<button class="opt" data-check="${o.value}"><span class="box">✓</span><span><b>${esc(o.label)}</b>${o.description ? `<small>${esc(o.description)}</small>` : ''}</span></button>`).join('')}</div><div class="iv-error" id="ivErr" hidden></div><div class="iv-actions">${undo}<span class="grow">여러 개를 고를 수 있어요.</span><button class="btn btn-primary" id="ivDone" disabled>선택 완료</button></div>`;
+    } else if (q.inputType === 'number') {
+      box.innerHTML = `<div class="iv-field"><input id="ivNum" type="number" min="0" max="100000000" step="1000" inputmode="numeric" placeholder="${esc(q.placeholder || '')}" /><span class="unit">원</span><button class="btn btn-primary" id="ivOk">확인</button></div>
+        <div class="iv-chips">${[[0, '0원 (Free Tier만)'], [30000, '3만 원'], [50000, '5만 원'], [100000, '10만 원']].map(([v, l]) => `<button data-amount="${v}">${l}</button>`).join('')}</div>
+        <div class="iv-error" id="ivErr" hidden></div><div class="iv-actions">${undo}</div>`;
+      $('#ivNum').focus();
+    } else {
+      box.innerHTML = `<div class="iv-field"><textarea id="ivText" maxlength="1000" placeholder="${esc(q.placeholder || '')}"></textarea></div><div class="iv-actions">${undo}<span class="grow iv-count" id="ivCount">0 / 1000</span>${skip}<button class="btn btn-primary" id="ivOk">보내기</button></div>`;
+      $('#ivText').focus();
+    }
+  }
+
+  function commitAnswer(value) {
+    iv.answers[IV[iv.index].id] = value;
+    iv.index += 1;
+    renderInterview();
+  }
+  const ivErr = msg => { const el = $('#ivErr'); if (!el) return; el.textContent = msg || ''; el.hidden = !msg; };
+
+  $('#ivInput').addEventListener('click', e => {
+    const q = IV[iv.index];
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.matches('[data-undo]')) { iv.index = Math.max(0, iv.index - 1); delete iv.answers[IV[iv.index].id]; renderInterview(); return; }
+    if (t.matches('[data-skip]')) { commitAnswer(null); return; }
+    if (t.id === 'ivMake') { startGeneration(); return; }
+    if (!q) return;
+    if (t.dataset.pick) { commitAnswer(t.dataset.pick); return; }
+    if (t.dataset.check) {
+      const value = t.dataset.check, boxes = [...$('#ivInput').querySelectorAll('[data-check]')];
+      if (value === 'none') boxes.forEach(b => b.classList.toggle('checked', b === t && !t.classList.contains('checked')));
+      else { t.classList.toggle('checked'); boxes.find(b => b.dataset.check === 'none')?.classList.remove('checked'); }
+      $('#ivDone').disabled = !boxes.some(b => b.classList.contains('checked'));
+      ivErr('');
+      return;
+    }
+    if (t.id === 'ivDone') { commitAnswer([...$('#ivInput').querySelectorAll('[data-check].checked')].map(b => b.dataset.check)); return; }
+    if (t.dataset.amount !== undefined) { $('#ivNum').value = t.dataset.amount; $('#ivNum').focus(); ivErr(''); return; }
+    if (t.id === 'ivOk') {
+      if (q.inputType === 'number') {
+        const raw = $('#ivNum').value.trim(), n = Number(raw);
+        if (raw === '' || !Number.isInteger(n) || n < 0 || n > 100000000) { ivErr('0원 이상 1억 원 이하의 숫자를 입력해 주세요.'); return; }
+        commitAnswer(n);
+      } else commitAnswer($('#ivText').value.trim() || null);
+    }
+  });
+  $('#ivInput').addEventListener('input', e => { if (e.target.id === 'ivText') $('#ivCount').textContent = `${e.target.value.length} / 1000`; });
+  $('#ivInput').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'ivNum') { e.preventDefault(); $('#ivOk').click(); } });
+  // 요약에서 "여기부터 다시 답하기": 그 질문 이후의 답은 지우고 다시 묻는다
+  $('#ivLog').addEventListener('click', e => {
+    const b = e.target.closest('[data-redo]'); if (!b) return;
+    const i = Number(b.dataset.redo);
+    IV.slice(i).forEach(x => { delete iv.answers[x.id]; });
+    iv.index = i; renderInterview();
+  });
+
+  // --- 3안 만드는 중 (접수 → 생성 중 → 안이 하나씩 끝남). 시간은 프로토타입이 줄여서 보여 준다 ---
+  let genAttempt = 0, genTimers = [];
+  const clearGen = () => { genTimers.forEach(clearTimeout); genTimers = []; };
+  const later = (ms, fn) => genTimers.push(setTimeout(fn, ms));
+  function genRows(states) {
+    return TIER_ORDER.map(t => {
+      const s = states[t] || 'wait';
+      const ico = s === 'done' ? '✓' : s === 'fail' ? '⚠' : s === 'run' ? '<span class="spin"></span>' : '·';
+      const text = s === 'done' ? '완료' : s === 'fail' ? '만들지 못했어요' : s === 'run' ? '만드는 중' : '대기 중';
+      return `<div class="gen-row ${s === 'done' ? 'done' : s === 'fail' ? 'fail' : ''}"><span class="gen-ico">${ico}</span><b>${TIER_LABEL[t]}</b><small>${text}</small></div>`;
+    }).join('');
+  }
+  function showGen(title, sub, states, extra = '') {
+    $('#genCard').innerHTML = `<h2>${title}</h2><p>${sub}</p>${genRows(states)}${extra}`;
+  }
+  function startGeneration() {
+    clearGen(); goto('generating');
+    // 첫 시도는 ?state= 시나리오를 따르고, 다시 시도하면 성공한다
+    const scenario = genAttempt === 0 && MOCK_STATE === 'failed' ? 'failed' : genAttempt === 0 && MOCK_STATE === 'partial-failed' ? 'partial' : 'success';
+    genAttempt += 1;
+    const cancel = '<div class="gen-actions"><button class="btn" id="genCancel">취소</button></div><div class="gen-note">보통 30~60초 걸려요. (프로토타입은 몇 초로 줄여서 보여 줘요)</div>';
+    showGen('요청을 접수했어요', '잠시만 기다려 주세요.', {}, cancel);
+    later(1000, () => showGen('3안을 만들고 있어요', '끝난 안부터 하나씩 채워져요.', { minimal_cost: 'run', balanced: 'run', scalable: 'run' }, cancel));
+    if (scenario === 'failed') {
+      later(2600, () => finishGeneration(structuredClone(MOCK.failed)));
+      return;
+    }
+    later(2000, () => showGen('3안을 만들고 있어요', '끝난 안부터 하나씩 채워져요.', { minimal_cost: 'done', balanced: 'run', scalable: 'run' }, cancel));
+    later(3000, () => showGen('3안을 만들고 있어요', '끝난 안부터 하나씩 채워져요.', { minimal_cost: 'done', balanced: 'done', scalable: 'run' }, cancel));
+    later(4000, () => {
+      const result = structuredClone(scenario === 'partial' ? MOCK.partialFailed : MOCK.completed);
+      const states = { minimal_cost: 'done', balanced: 'done', scalable: scenario === 'partial' ? 'fail' : 'done' };
+      showGen(scenario === 'partial' ? '일부 안만 만들었어요' : '3안이 모두 만들어졌어요', '구성도 화면으로 이동해요.', states);
+      later(1100, () => finishGeneration(result));
+    });
+  }
+  $('#genCard').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'genCancel') { clearGen(); goto('interview'); renderInterview(); }
+    if (b.id === 'genRetry') startGeneration();
+    if (b.id === 'genEdit') { clearGen(); goto('interview'); renderInterview(); }
+  });
+  function finishGeneration(result) {
+    if (result.status === 'failed') {
+      const err = result.error || { code: 'DESIGN_GENERATION_FAILED', retryable: true };
+      const states = { minimal_cost: 'fail', balanced: 'fail', scalable: 'fail' };
+      const actions = `<div class="gen-actions"><button class="btn" id="genEdit">답변 수정하기</button>${err.retryable ? '<button class="btn btn-primary" id="genRetry">다시 시도</button>' : ''}</div>`;
+      showGen('구성도를 만들지 못했어요', ERROR_TEXT[err.code] || ERROR_TEXT.DESIGN_GENERATION_FAILED, states, actions);
+      return;
+    }
+    job = result;
+    const first = tierEntries(job).find(e => !e.failed);
+    showDesign(first.design, { announce: false });
+    goto('app');
+    toast(job.failures.length ? '일부 안은 만들지 못했어요' : '3안을 만들었어요');
+  }
+
+  // --- 구성도 화면에서 질문부터 다시 하기 ---
+  const restartModal = $('#restartModal');
+  $('#restartCancel').onclick = () => { restartModal.hidden = true; };
+  restartModal.onclick = e => { if (e.target === restartModal) restartModal.hidden = true; };
+  $('#restartOk').onclick = () => { restartModal.hidden = true; resetInterview(); goto('interview'); renderInterview(); };
+
   // ---------- Init ----------
   const firstOk = tierEntries().find(e => !e.failed);
   if (firstOk) showDesign(firstOk.design, { announce: false });
   else { clearDesign(); state.tab = null; updateTierUI(); renderNodes(); renderGuide(); }
-  greet(); fit(); updateTopbar();
-  if (!firstOk) openFail(null);
+  greet(); updateTopbar();
+  // 검토용 주소: ?screen=login | interview | generating | app. 없으면 로그인 상태에 따라 시작한다.
+  const startParam = new URLSearchParams(location.search).get('screen');
+  const start = ['login', 'interview', 'generating', 'app'].includes(startParam) ? startParam : (isLoggedIn() ? 'interview' : 'login');
+  if (start !== 'login') setLoggedIn(true);
+  goto(start);
+  if (start === 'interview') renderInterview();
+  else if (start === 'generating') startGeneration();
+  else if (start === 'app' && !firstOk) openFail(null);
   addEventListener('resize', () => { restoreWidths(); updateTopbar(); });
 })();
