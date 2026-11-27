@@ -352,13 +352,13 @@ export function Workspace({ job, retry }: Props) {
                     </aside>
                 )}
             </div>
-            <footer className="flex h-12 shrink-0 items-center justify-between border-t border-border bg-surface-2 px-3 text-sub text-muted">
+            <footer className="flex h-16 shrink-0 items-center justify-between border-t border-border bg-surface-2 px-3 text-sub text-muted">
                 <span>© 2026 ArchiMate</span>
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => setShortcutsOpen(true)}
-                        className="rounded-full border border-border bg-surface px-2.5 py-1"
+                        className="rounded-full border border-border bg-surface px-4 py-1.5 text-title leading-normal"
                     >
                         ⌨ 단축키
                     </button>

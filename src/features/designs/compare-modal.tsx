@@ -22,7 +22,7 @@ interface Props {
 const List = ({ items, ordered }: { items: string[]; ordered?: boolean }) => {
     const Tag = ordered ? 'ol' : 'ul';
     return (
-        <Tag className={ordered ? 'list-decimal pl-5' : 'list-disc pl-5'}>
+        <Tag className={ordered ? 'list-decimal space-y-1 pl-5' : 'list-disc space-y-1 pl-5'}>
             {items.map((x) => (
                 <li key={x}>{x}</li>
             ))}
@@ -41,11 +41,11 @@ export function CompareModal({
 }: Props) {
     const row = (label: string, render: (d: Design) => ReactNode) => (
         <tr key={label} className="border-t border-border align-top">
-            <th scope="row" className="w-28 py-3 pr-3 text-left text-sub font-semibold text-muted">
+            <th scope="row" className="w-32 py-4 pr-3 text-left text-body font-semibold text-muted">
                 {label}
             </th>
             {entries.map((e) => (
-                <td key={e.tier} className="py-3 pr-4 text-sub">
+                <td key={e.tier} className="py-4 pr-4 text-body leading-relaxed">
                     {isFailedEntry(e) ? <span className="text-muted">—</span> : render(e.design)}
                 </td>
             ))}
@@ -60,17 +60,17 @@ export function CompareModal({
                 description="월 비용은 백엔드가 계산한 값이에요. 마음에 드는 안을 골라 구성도와 설정 순서를 확인하세요."
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] border-collapse">
+                    <table className="w-full min-w-[860px] border-collapse">
                         <thead>
                             <tr>
                                 <td />
                                 {entries.map((e) =>
                                     isFailedEntry(e) ? (
                                         <th key={e.tier} className="pr-4 pb-3 text-left align-top">
-                                            <span className="block font-bold">
+                                            <span className="block text-title font-bold">
                                                 {TIER_LABEL[e.tier]}
                                             </span>
-                                            <p className="my-1 text-sub font-normal text-danger-text">
+                                            <p className="my-1.5 text-body font-normal text-danger-text">
                                                 만들지 못했어요
                                             </p>
                                             <Button
@@ -82,14 +82,16 @@ export function CompareModal({
                                         </th>
                                     ) : (
                                         <th key={e.tier} className="pr-4 pb-3 text-left align-top">
-                                            <span className="block font-bold">
+                                            <span className="block text-title font-bold">
                                                 {TIER_LABEL[e.tier]}
                                             </span>
-                                            <h4 className="my-1 text-sub font-normal text-muted">
+                                            <h4 className="my-1.5 text-body font-normal text-muted">
                                                 {e.design.title}
                                             </h4>
                                             {e.design.id === currentDesignId ? (
-                                                <Badge tone="accent">보고 있는 안</Badge>
+                                                <Badge tone="accent" className="text-sub">
+                                                    보고 있는 안
+                                                </Badge>
                                             ) : (
                                                 <DialogClose asChild>
                                                     <Button onClick={() => onPick(e.tier)}>
@@ -106,10 +108,10 @@ export function CompareModal({
                             {row('월 예상 비용', (d) =>
                                 d.monthlyCost ? (
                                     <>
-                                        <b className="block text-body">
+                                        <b className="block text-title">
                                             {formatKRW(d.monthlyCost.total)}
                                         </b>
-                                        <small className="block text-muted">
+                                        <small className="mt-1 block text-sub leading-normal text-muted">
                                             ≈ ${d.monthlyCost.totalUsd} · 환율{' '}
                                             {d.monthlyCost.exchangeRate.toLocaleString('ko-KR')}원 (
                                             {d.monthlyCost.exchangeRateDate})
@@ -117,8 +119,8 @@ export function CompareModal({
                                         <em
                                             className={
                                                 d.monthlyCost.overBudget
-                                                    ? 'text-danger-text'
-                                                    : 'text-success'
+                                                    ? 'mt-1 block text-sub font-semibold text-danger-text not-italic'
+                                                    : 'mt-1 block text-sub font-semibold text-success not-italic'
                                             }
                                         >
                                             {d.monthlyCost.overBudget
@@ -135,7 +137,7 @@ export function CompareModal({
                                     <>
                                         {d.monthlyCost.freeTier ? '적용' : '적용 안 됨'}
                                         {d.monthlyCost.freeTierNote && (
-                                            <small className="block text-muted">
+                                            <small className="mt-1 block text-sub leading-normal text-muted">
                                                 {d.monthlyCost.freeTierNote}
                                             </small>
                                         )}
@@ -146,10 +148,13 @@ export function CompareModal({
                             )}
                             {row('운영 난이도', (d) => (
                                 <>
-                                    <Badge tone={LEVEL_TONE[d.difficulty.level]}>
+                                    <Badge
+                                        tone={LEVEL_TONE[d.difficulty.level]}
+                                        className="text-sub"
+                                    >
                                         {d.difficulty.label}
                                     </Badge>
-                                    <small className="mt-1 block text-muted">
+                                    <small className="mt-1.5 block text-sub leading-normal text-muted">
                                         {d.difficulty.reason}
                                     </small>
                                 </>

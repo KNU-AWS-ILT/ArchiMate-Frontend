@@ -44,7 +44,7 @@ export function GenerationCard({ title, sub, progress, children }: CardProps) {
                                 )}
                             </span>
                             <b>{TIER_LABEL[t]}</b>
-                            <small className="ml-auto text-muted">
+                            <small className="ml-auto text-sub text-muted">
                                 {PROGRESS_TEXT[progress[t]]}
                             </small>
                         </li>
